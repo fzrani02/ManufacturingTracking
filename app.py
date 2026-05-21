@@ -8,7 +8,7 @@ st.set_page_config(
 )
 
 st.title("🏭 Manufacturing Tracking Dashboard")
-st.write("Silakan klik dua kali pada sel tabel di bawah untuk mengisi atau mengedit data.")
+st.write("Please double-click on the table cell below to enter or edit data.")
 
 # 2. Inisialisasi Data (Session State)
 # Ini penting agar data tidak hilang setiap kali Anda berinteraksi dengan dashboard
@@ -57,9 +57,9 @@ st.session_state.df = edited_df
 # 4. Fitur Upload Gambar Pendukung
 st.divider() # Garis pemisah
 st.subheader("📎 Upload Gambar")
-st.info("💡 Karena sel tabel tidak bisa langsung untuk upload gambar, silakan upload gambar di sini, lalu ketikkan nama gambar tersebut di kolom 'Picture' pada tabel di atas.")
+st.info("💡 Since you can't upload images directly into the table cells, please upload the image here, then enter the image name in the ‘Picture’ column in the table above.")
 
-uploaded_file = st.file_uploader("Pilih gambar masalah (Problem Picture)", type=["jpg", "jpeg", "png"])
+uploaded_file = st.file_uploader("Choose Problem Picture)", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
     # Menampilkan gambar yang baru diupload
