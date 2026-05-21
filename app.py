@@ -56,7 +56,7 @@ st.session_state.df = edited_df
 
 # 4. Fitur Upload Gambar Pendukung
 st.divider() # Garis pemisah
-st.subheader("📎 Upload Gambar")
+st.subheader("📎 Upload Picture")
 st.info("💡 Since you can't upload images directly into the table cells, please upload the image here, then enter the image name in the ‘Picture’ column in the table above.")
 
 uploaded_file = st.file_uploader("Choose Problem Picture)", type=["jpg", "jpeg", "png"])
