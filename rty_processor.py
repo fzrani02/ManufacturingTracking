@@ -95,7 +95,9 @@ def process_rty_7z(uploaded_file):
                         }, inplace=True)
     
                         if "QTY" not in df.columns:
-                            df.insert(0, "QTY", ["QTY IN","QTY PASS","QTY FAIL","YIELD","OTHER"][:len(df)])
+                            df.insert(0, "QTY", ["QTY IN","QTY PASS","QTY FAIL","YIELD (%)","OTHER"][:len(df)])
+
+                        df["QTY"] = df["QTY"].astype(str).str.strip().replace:({"YIELD":"YIELD (%)"})
                         
                         month_cols= df.columns[1:]
     
@@ -117,7 +119,9 @@ def process_rty_7z(uploaded_file):
                         }, inplace=True)
     
                         if "QTYWeek" not in df_week.columns:
-                            df_week.insert(0, "QTYWeek", ["QTY IN","QTY PASS","QTY FAIL","YIELD"])
+                            df_week.insert(0, "QTYWeek", ["QTY IN","QTY PASS","QTY FAIL","YIELD (%)"])
+
+                        df_week["QTYWeek"] = df_week["QTYWeek"].astype(str).str.strip().replace({"YIELD" : "YIELD (%)"})
                         
                         week_cols = df_week.columns[1:]
                         
