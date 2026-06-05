@@ -247,7 +247,7 @@ def process_rty_7z(uploaded_file):
                                 all_top5_data.append({
                                     **base_info,
                                     "Month": month,
-                                    "Top 5 Fail Mode": "Not Available",
+                                    "Top 5 Fail Mode": "No Additional Failures",
                                     "Count": 0
                                 })
                                 rows_added += 1
@@ -256,7 +256,7 @@ def process_rty_7z(uploaded_file):
                                 all_top5_data.append({
                                     **base_info,
                                     "Month": month,
-                                    "Top 5 Fail Mode": "No Fail Data",
+                                    "Top 5 Fail Mode": "No Failure",
                                     "Count": 0
                                 })
                     ###########
@@ -282,7 +282,7 @@ def process_rty_7z(uploaded_file):
                                 weekly_top5_data.append({
                                     **base_info,
                                     "Week": week,
-                                    "Top 5 Fail Mode": "Not Available",
+                                    "Top 5 Fail Mode": "No Additional Failures",
                                     "Count": 0
                                 })
                                 rows_added += 1
@@ -291,7 +291,7 @@ def process_rty_7z(uploaded_file):
                                 weekly_top5_data.append({
                                     **base_info,
                                     "Week":week,
-                                    "Top 5 Fail Mode": "No Fail Data",
+                                    "Top 5 Fail Mode": "No Failure",
                                     "Count": 0
                                 })
 
