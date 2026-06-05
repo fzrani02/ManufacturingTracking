@@ -215,7 +215,7 @@ def render_weekly_tab(df_qty_weekly, df_weekly_detail, df_fail_weekly):
 
             df_fail_filtered= df_fail_filtered[
                 (df_fail_filtered["Count"] > 0) &
-                (~df_fail_filtered["Top 5 Fail Mode"].isin(["No Fail Data", "Not Available"]))
+                (~df_fail_filtered["Top 5 Fail Mode"].isin(["No Failure", "No Additional Data"]))
             ]
 
             if not df_fail_filtered.empty:
