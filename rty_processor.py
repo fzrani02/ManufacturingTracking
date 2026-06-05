@@ -41,6 +41,8 @@ def process_rty_7z(uploaded_file):
     weekly_top5_data = []
     weekly_detail_data = []
 
+    extracted_year = ""
+
     months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
     weeks = [f"WW{str(i).zfill(2)}" for i in range(1,53)]
   
@@ -84,6 +86,19 @@ def process_rty_7z(uploaded_file):
                     # ==============================
 
                     with pd.ExcelFile(full_path, engine="openpyxl") as xls:
+
+                        if not extracted_year:
+                            try:
+                                df_date = pd.read_excel(xls, sheet_name=1, usecols="B", skiprows=1, nrows=1, header=None)
+                                date_val = df_date.iloc[0, 0]
+
+                                if pd.notna(date_val):
+                                    if hasattr(date_val, 'year'):
+                                        extracted_year =str(date_val.year)
+                                    else:
+                                        extracted_year = str(pd.to_datetime(date_val).year)
+                            except Exception:
+                                pass
     
                         df = pd.read_excel(xls, sheet_name=3, usecols ="A:N", skiprows=1, nrows=5)
                         
@@ -303,7 +318,7 @@ def process_rty_7z(uploaded_file):
                     ##########
 
         if not all_data:
-            return None, None, None, None, None, None, None
+            return None, None, None, None, None, None, None, None
 
         final_df = pd.concat(all_data, ignore_index=True)
         top5_df = pd.DataFrame(all_top5_data)
@@ -373,7 +388,8 @@ def process_rty_7z(uploaded_file):
             weekly_qty_df,
             weekly_top5_df,
             weekly_detail_df,
-            output_buffer
+            output_buffer,
+            extracted_year
         )
     
     finally:
