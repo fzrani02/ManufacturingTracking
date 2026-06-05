@@ -290,7 +290,7 @@ if uploaded_file:
         tab1, tab2, tab3 = st.tabs(["Data Overview", "Monthly", "Weekly"])
 
         with tab1:
-            st.header("Monthly Integrated Data")
+            st.header("Monthly Integrated Yield Data")
             st.markdown("#### Quantity and Yield per Month")
             st.dataframe(df_qty, use_container_width=True)
 
@@ -322,7 +322,7 @@ if uploaded_file:
             
             st.markdown("----")
             
-            st.header("Weekly Integrated Data")
+            st.header("Weekly Integrated Yield Data")
             
             st.markdown("#### Quantity and Yield per Week")
             st.dataframe(df_qty_weekly, use_container_width=True)
