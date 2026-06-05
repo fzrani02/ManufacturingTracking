@@ -291,13 +291,13 @@ if uploaded_file:
 
         with tab1:
             st.header("Monthly Integrated Yield Data")
-            st.markdown("#### Quantity and Yield per Month")
+            st.markdown("#### → Quantity and Yield per Month")
             st.dataframe(df_qty, use_container_width=True)
 
-            st.markdown("#### Top 5 Fail Mode per Month")
+            st.markdown("#### → Top 5 Fail Mode per Month")
             st.dataframe(df_fail, use_container_width=True)
 
-            st.markdown("#### Monthly Detail")
+            st.markdown("#### → Monthly Detail")
 
             # Month Order
             month_order_full = [
@@ -324,13 +324,13 @@ if uploaded_file:
             
             st.header("Weekly Integrated Yield Data")
             
-            st.markdown("#### Quantity and Yield per Week")
+            st.markdown("#### → Quantity and Yield per Week")
             st.dataframe(df_qty_weekly, use_container_width=True)
             
-            st.markdown("#### Top 5 Fail Mode per Week")
+            st.markdown("#### → Top 5 Fail Mode per Week")
             st.dataframe(df_fail_weekly, use_container_width=True)
             
-            st.markdown("#### Weekly Detail")
+            st.markdown("#### → Weekly Detail")
             st.dataframe(df_weekly_detail, use_container_width=True)
             
             st.markdown("----")
