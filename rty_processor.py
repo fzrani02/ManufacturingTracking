@@ -97,7 +97,7 @@ def process_rty_7z(uploaded_file):
                         if "QTY" not in df.columns:
                             df.insert(0, "QTY", ["QTY IN","QTY PASS","QTY FAIL","YIELD (%)","OTHER"][:len(df)])
 
-                        df["QTY"] = df["QTY"].astype(str).str.strip().replace:({"YIELD":"YIELD (%)"})
+                        df["QTY"] = df["QTY"].astype(str).str.strip().replace({"YIELD":"YIELD (%)"})
                         
                         month_cols= df.columns[1:]
     
