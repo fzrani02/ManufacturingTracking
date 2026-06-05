@@ -774,7 +774,7 @@ if uploaded_file:
                     df_yield_project = df_qty[
                         (df_qty["Customer"] == selected_customer_defect) &
                         (df_qty["Station"] == selected_station) &
-                        (df_qty["QTY"] == "YIELD")
+                        (df_qty["QTY"] == "YIELD (%)")
                     ].copy()
 
                     if not df_yield_project.empty and selected_month_defect in df_yield_project.columns:
