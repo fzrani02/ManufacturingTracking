@@ -410,7 +410,7 @@ if uploaded_file:
                 
                 if not df_fail_overall.empty:
                     top5_fails = df_fail_overall.head(5).reset_index()
-                    fig_fail_pie = px.bar(top5_fails, x="Count", y="Top 5 Fail Mode", orientation='h', text="Count", color="Count", color_continuous_scale=["#7f1d1d", "#3A0D0D"])
+                    fig_fail_pie = px.bar(top5_fails, x="Count", y="Top 5 Fail Mode", orientation='h', text="Count", color="Count", color_continuous_scale=["#E17A7A", "#3A0D0D"])
                     fig_fail_pie.update_layout(yaxis={'categoryorder':'total ascending'}, margin=dict(l=40, r=40, t=20, b=40))
                     st.plotly_chart(fig_fail_pie, use_container_width=True)
                 else:
