@@ -393,9 +393,11 @@ if uploaded_file:
                     fig_trend = px.line(monthly_trend, x="Month", y="Yield (%)", markers=True, text="Yield (%)", color_discrete_sequence=['#FF8C00'])
                     fig_trend.update_traces(textposition="top center", texttemplate='%{text}%')
                     fig_trend.update_layout(
-                        yaxis_title = "Yield (%)", 
-                        yaxis_title="Month", 
-                        yaxis=dict(range=[0,100]),
+                        xaxis_title="Month",
+                        yaxis=dict(
+                            title="Yield (%)",
+                            range=[0, 100]
+                        ),
                         margin=dict(l=40, r=40, t=20, b=40)
                     )
                                     
@@ -432,7 +434,16 @@ if uploaded_file:
                 # Warna garis oranye dan sumbu Y 0 - 100
                 fig_trend_w = px.line(weekly_trend, x="Week", y="Yield (%)", markers=True, text="Yield (%)", color_discrete_sequence=['#FF8C00'])
                 fig_trend_w.update_traces(textposition="top center", texttemplate='%{text}%')
-                fig_trend_w.update_layout(yaxis_title="Yield (%)", xaxis_title="Week", yaxis=dict(range=[0, 100]))
+                
+                fig_trend_w.update_layout(
+                    xaxis_title="Week",
+                    yaxis=dict(
+                        title="Yield (%)",
+                        range=[0, 100]
+                    ),
+                    margin=dict(l=50, r=50, t=20, b=40)
+                )
+                
                 st.plotly_chart(fig_trend_w, use_container_width=True)
             else:
                 st.info("No weekly trend data available.")
