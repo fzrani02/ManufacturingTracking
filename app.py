@@ -309,7 +309,7 @@ if uploaded_file:
                 st.metric(label="Overall Yield", value=f"{overall_yield:.2f}%")
 
             with col3:
-                st.metric(label="Top Defect Mode", value=str(top_fail_name), delta =f"-{int(top_fail_count)} pcs", delta_color="inverse")
+                st.metric(label="Top Defect Mode", value=str(top_fail_name), delta =f"{int(top_fail_count)} pcs", delta_color="inverse")
 
             st.markdown("---")
 
