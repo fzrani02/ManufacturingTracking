@@ -290,6 +290,7 @@ if uploaded_file:
         tab1, tab2, tab3, tab4 = st.tabs(["Performance Overview", "Monthly", "Weekly", "Integrated Raw Data"])
 
         with tab1:
+            year_text = f" - {extracted_year}" if extracted_year else ""
             st.header(f"Executive Summary {year_text}")
             
             # --- 1. HITUNG KPI ---
