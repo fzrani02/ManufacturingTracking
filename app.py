@@ -281,7 +281,7 @@ st.sidebar.caption("This tool uses a *Stateless Architecture* with *In-Memory Pr
 if uploaded_file:
 
     with st.spinner("Processing file..."):
-        df_qty, df_fail, df_monthly, df_qty_weekly, df_fail_weekly, df_weekly_detail, excel_buffer = run_processing(uploaded_file)
+        df_qty, df_fail, df_monthly, df_qty_weekly, df_fail_weekly, df_weekly_detail, excel_buffer, extracted_year = run_processing(uploaded_file)
 
     if df_qty is not None:
 
@@ -290,7 +290,8 @@ if uploaded_file:
         tab1, tab2, tab3 = st.tabs(["Data Overview", "Monthly", "Weekly"])
 
         with tab1:
-            st.header("Monthly Integrated Yield Data")
+            year_text = f" - {extracted_year} if extracted_year else ""
+            st.header(f"Monthly Integrated Yield Data{year_text}")
             st.markdown("#### → Quantity and Yield per Month")
             st.dataframe(df_qty, use_container_width=True)
 
@@ -322,7 +323,7 @@ if uploaded_file:
             
             st.markdown("----")
             
-            st.header("Weekly Integrated Yield Data")
+            st.header(f"Weekly Integrated Yield Data{year_text}")
             
             st.markdown("#### → Quantity and Yield per Week")
             st.dataframe(df_qty_weekly, use_container_width=True)
