@@ -1,4 +1,4 @@
-
+import plotly.express as px
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 
@@ -287,60 +287,61 @@ if uploaded_file:
 
         st.success("Processing Completed")
 
-        tab1, tab2, tab3 = st.tabs(["Data Overview", "Monthly", "Weekly"])
+        tab1, tab2, tab3, tab4 = st.tabs(["Performance Overview", "Monthly", "Weekly", "Integrated Raw Data"])
 
         with tab1:
             year_text = f" - {extracted_year}" if extracted_year else ""
-            st.header(f"Monthly Integrated Yield Data{year_text}")
-            st.markdown("#### → Quantity and Yield per Month")
-            st.dataframe(df_qty, use_container_width=True)
+            st.header(f"Performance Overview {year_text}")
 
-            st.markdown("#### → Top 5 Fail Mode per Month")
-            st.dataframe(df_fail, use_container_width=True)
+            total_qty_in = df_monthly["TOTAL QTY IN"].sum()
+            total_qty_pass = df_monthly["TOTAL QTY PASS"].sum()
+            overall_yield = (total_qty_pass / total_qty_in * 100) if total_qty_in > 0 else 0 
 
-            st.markdown("#### → Monthly Detail")
+            df_fail_overall = df_fail.groupby("Top 5 Fail Mode")["Count"].sum().sort_values(ascending=False)
+            df_fail_overall = df_fail_overall[~df_fail_overall.index.isin(["No Fail Data", "Not Available"])]
+            top_fail_name = df_fail_overall.index[0] if not df_fail_overall.empty else "None"
+            top_fail_count = df_fail_overall.iloc[0] if not df_fail_overall.empty else 0 
 
-            # Month Order
-            month_order_full = [
-                "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", 
-                "Total"
-            ]
+            col 1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric(label="Total Volume (QTY IN)", value=f"{int(total_qty_in):,}")
+            with col2:
+                st.metric(label="Overall Yield", value=f"{overall_yield:.2f}%")
 
-            df_monthly_display = df_monthly.copy()
+            with col3:
+                st.metric(label="Top Defect Mode", value=str(top_fail_name), delta =f"-{int(top_fail_count)} pcs", delta_color="inverse")
 
-            df_monthly_display["Month"] = pd.Categorical(
-                df_monthly_display["Month"],
-                categories=month_order_full,
-                ordered=True
-            )
+            st.markdown("---")
 
-            df_monthly_display =df_monthly_display.sort_values(
-                by=["Customer", "Station", "Month"]
-            )
-            
-            st.dataframe(df_monthly_display, use_container_width=True)
-            
-            st.markdown("----")
-            
-            st.header(f"Weekly Integrated Yield Data{year_text}")
-            
-            st.markdown("#### → Quantity and Yield per Week")
-            st.dataframe(df_qty_weekly, use_container_width=True)
-            
-            st.markdown("#### → Top 5 Fail Mode per Week")
-            st.dataframe(df_fail_weekly, use_container_width=True)
-            
-            st.markdown("#### → Weekly Detail")
-            st.dataframe(df_weekly_detail, use_container_width=True)
-            
-            st.markdown("----")
+            col_chart1, col_chart2 = st.columns(2)
 
-            st.download_button(
-                "Download Integrated File",
-                excel_buffer,
-                file_name="Report_Final.xlsx"
-            )
+            with col_chart1:
+                st.subheader("Yield Trend per Month")
+                monthly_trend = df_monthly.groupby("Month", as_index=False)[["TOTAL QTY IN", "TOTAL QTY PASS"]].sum()
+                monthly_trend["Yield (%)"] = (monthly_trend["TOTAL QTY PASS"] / monthly_trend["TOTAL QTY IN"].replace(0, pd.NA)) * 100
+
+                month_order = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+                monthly_trend["Month"] = pd.Categorical(monthly_trend["Month"], categories=month_order, ordered=True)
+                monthly_trend = monthly_trend.sort_values("Month").dropna(subset=["Yield (%)"])
+
+                if not monthly_trend.empty:
+                    fig_trend = px.line(month_trend, x="Month", y="Yield (%)", markers=True, text="Yield (%)")
+                    fig_trend.update_traces(textposition="top center", texttemplate='%{text:2f}%')
+                    fig_trend.update_layout(yaxis_title="Yield (%)", xaxis_title="Month", yaxis_range=[0, 110])
+                    st.plotly_chart(fig_trend, use_container_width= True)
+                else:
+                    st.info("No trend data available.")
+
+            with col_chart2:
+                st.subheader("Top 5 Defect Modes Overall")
+                if not df_fail_overall.empty:
+                    top5_fails = df_fail_overall.head(5).reset_index()
+                    fig_fail_pie = px.bar(top5_fails, x="Count", y="Top 5 Fail Mode", orientation = 'h', text="Count", color="Count", color_continuous_scale="Reds") 
+                    fig_fail_pie.update_layout(yaxis={'categoryorder':'total ascending'})
+                    st.plotly_chart(fig_fail_pie, use_container_width=True)
+                else:
+                    st.info("No defect data available.")
+            
 
 ######################################################################################################################################################################
 
@@ -999,7 +1000,61 @@ if uploaded_file:
                         st.warning(f"Unable to create report. Error: {e}")
             else:
                 st.warning("No weekly data available.")
-        
+
+################################################################################################################################
+
+        with tab4:
+            
+            st.header(f"Monthly Integrated Yield Data{year_text}")
+            st.markdown("#### → Quantity and Yield per Month")
+            st.dataframe(df_qty, use_container_width=True)
+
+            st.markdown("#### → Top 5 Fail Mode per Month")
+            st.dataframe(df_fail, use_container_width=True)
+
+            st.markdown("#### → Monthly Detail")
+
+            # Month Order
+            month_order_full = [
+                "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", 
+                "Total"
+            ]
+
+            df_monthly_display = df_monthly.copy()
+
+            df_monthly_display["Month"] = pd.Categorical(
+                df_monthly_display["Month"],
+                categories=month_order_full,
+                ordered=True
+            )
+
+            df_monthly_display =df_monthly_display.sort_values(
+                by=["Customer", "Station", "Month"]
+            )
+            
+            st.dataframe(df_monthly_display, use_container_width=True)
+            
+            st.markdown("----")
+            
+            st.header(f"Weekly Integrated Yield Data {year_text}")
+            
+            st.markdown("#### → Quantity and Yield per Week")
+            st.dataframe(df_qty_weekly, use_container_width=True)
+            
+            st.markdown("#### → Top 5 Fail Mode per Week")
+            st.dataframe(df_fail_weekly, use_container_width=True)
+            
+            st.markdown("#### → Weekly Detail")
+            st.dataframe(df_weekly_detail, use_container_width=True)
+            
+            st.markdown("----")
+
+            st.download_button(
+                "Download Integrated File",
+                excel_buffer,
+                file_name=f"Raw_Integrated_Yield_Data_{extracted_year}.xlsx" if extracted_year else "Raw_Integrated_Yield_Data.xlsx"
+            )
             
 
 
