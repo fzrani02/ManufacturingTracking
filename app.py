@@ -406,7 +406,7 @@ if uploaded_file:
                     st.info("No trend data available.")
 
             with col_chart2:
-                st.markdown("<h3 style='text-align: center; margin-bottom: 15px;'>Top 5 Defect Modes Overall</h3>", unsafe_allow_html=True)
+                st.markdown("<h3 style='text-align: center; margin-bottom: 15px;'>Top 5 Failed Modes Overall</h3>", unsafe_allow_html=True)
                 
                 if not df_fail_overall.empty:
                     top5_fails = df_fail_overall.head(5).reset_index()
