@@ -389,6 +389,8 @@ if uploaded_file:
                 monthly_trend["Month"] = pd.Categorical(monthly_trend["Month"], categories=month_order, ordered=True)
                 monthly_trend = monthly_trend.sort_values("Month").dropna(subset=["Yield (%)"])
 
+                monthly_trend = monthly_trend[monthly_trend["Yield (%)"] > 0]
+
                 if not monthly_trend.empty:
                     fig_trend = px.line(monthly_trend, x="Month", y="Yield (%)", markers=True, text="Yield (%)", color_discrete_sequence=['#FF8C00'])
                     fig_trend.update_traces(textposition="top center", texttemplate='%{text}%')
@@ -429,6 +431,8 @@ if uploaded_file:
             week_order = [f"WW{str(i).zfill(2)}" for i in range(1,53)]
             weekly_trend["Week"] = pd.Categorical(weekly_trend["Week"], categories=week_order, ordered=True)
             weekly_trend = weekly_trend.sort_values("Week").dropna(subset=["Yield (%)"])
+
+            weekly_trend = weekly_trend[weekly_trend["Yield (%)"] > 0]
             
             if not weekly_trend.empty:
                 # Warna garis oranye dan sumbu Y 0 - 100
