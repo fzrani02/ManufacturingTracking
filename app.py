@@ -380,10 +380,9 @@ if uploaded_file:
             col_chart1, col_chart2 = st.columns(2)
 
             with col_chart1:
-                st.subheader("Yield Trend per Month")
-                # Agregasi data bulanan
+                st.markdown("<h3 style='text-align: center; margin-bottom: 15px;'>Yield Trend per Month</h3>", unsafe_allow_html=True)
+   
                 monthly_trend = df_monthly.groupby("Month", as_index=False)[["TOTAL QTY IN", "TOTAL QTY PASS"]].sum()
-                # Modifikasi 1: Dibulatkan menjadi 2 angka di belakang koma
                 monthly_trend["Yield (%)"] = ((monthly_trend["TOTAL QTY PASS"] / monthly_trend["TOTAL QTY IN"].replace(0, pd.NA)) * 100).fillna(0).round(2)
                 
                 month_order = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
@@ -391,22 +390,26 @@ if uploaded_file:
                 monthly_trend = monthly_trend.sort_values("Month").dropna(subset=["Yield (%)"])
 
                 if not monthly_trend.empty:
-                    # Modifikasi 2: Warna garis oranye
                     fig_trend = px.line(monthly_trend, x="Month", y="Yield (%)", markers=True, text="Yield (%)", color_discrete_sequence=['#FF8C00'])
                     fig_trend.update_traces(textposition="top center", texttemplate='%{text}%')
-                    # Modifikasi 3: Sumbu Y dibatasi 0 - 100
-                    fig_trend.update_layout(yaxis_title="Yield (%)", xaxis_title="Month", yaxis_range=[0, 100])
+                    fig_trend.update_layout(
+                        yaxis_title = "Yield (%)", 
+                        yaxis_title="Month", 
+                        yaxis=dict(range=[0,100]),
+                        margin=dict(l=40, r=40, t=20, b=40)
+                    )
+                                    
                     st.plotly_chart(fig_trend, use_container_width=True)
                 else:
                     st.info("No trend data available.")
 
             with col_chart2:
-                st.subheader("Top 5 Defect Modes Overall")
+                st.markdown("<h3 style='text-align: center; margin-bottom: 15px;'>Top 5 Defect Modes Overall</h3>", unsafe_allow_html=True)
+                
                 if not df_fail_overall.empty:
                     top5_fails = df_fail_overall.head(5).reset_index()
-                    # Modifikasi 4: Warna gradasi merah muda ke merah gelap agar tidak menyatu dengan background putih
-                    fig_fail_pie = px.bar(top5_fails, x="Count", y="Top 5 Fail Mode", orientation='h', text="Count", color="Count", color_continuous_scale=["#fca5a5", "#7f1d1d"])
-                    fig_fail_pie.update_layout(yaxis={'categoryorder':'total ascending'})
+                    fig_fail_pie = px.bar(top5_fails, x="Count", y="Top 5 Fail Mode", orientation='h', text="Count", color="Count", color_continuous_scale=["#7f1d1d", "#3A0D0D"])
+                    fig_fail_pie.update_layout(yaxis={'categoryorder':'total ascending'}, margin=dict(l=40, r=40, t=20, b=40))
                     st.plotly_chart(fig_fail_pie, use_container_width=True)
                 else:
                     st.info("No defect data available.")
@@ -414,7 +417,7 @@ if uploaded_file:
             st.markdown("---")
 
             # --- 4. GRAFIK YIELD TREND PER WEEK ---
-            st.subheader("Yield Trend per Week")
+            st.markdown("<h3 style='text-align: center; margin-bottom: 15px;'>Yield Trend per Week</h3>", unsafe_allow_html=True)
             
             # Agregasi data mingguan
             weekly_trend = df_weekly_detail.groupby("Week", as_index=False)[["TOTAL QTY IN", "TOTAL QTY PASS"]].sum()
@@ -429,7 +432,7 @@ if uploaded_file:
                 # Warna garis oranye dan sumbu Y 0 - 100
                 fig_trend_w = px.line(weekly_trend, x="Week", y="Yield (%)", markers=True, text="Yield (%)", color_discrete_sequence=['#FF8C00'])
                 fig_trend_w.update_traces(textposition="top center", texttemplate='%{text}%')
-                fig_trend_w.update_layout(yaxis_title="Yield (%)", xaxis_title="Week", yaxis_range=[0, 100])
+                fig_trend_w.update_layout(yaxis_title="Yield (%)", xaxis_title="Week", yaxis=dict(range=[0, 100]))
                 st.plotly_chart(fig_trend_w, use_container_width=True)
             else:
                 st.info("No weekly trend data available.")
