@@ -6,3 +6,4 @@ matplotlib
 numpy
 streamlit-aggrid
 xlsxwriter
+plotly
