@@ -393,14 +393,15 @@ if uploaded_file:
 
                 if not monthly_trend.empty:
                     fig_trend = px.line(monthly_trend, x="Month", y="Yield (%)", markers=True, text="Yield (%)", color_discrete_sequence=['#FF8C00'])
-                    fig_trend.update_traces(textposition="top center", texttemplate='%{text}%')
+                    fig_trend.update_traces(textposition="top center", texttemplate='%{text}%', textfont=dict(weight="bold", color="black"))
                     fig_trend.update_layout(
                         xaxis_title="Month",
                         yaxis=dict(
                             title="Yield (%)",
                             range=[50, 120]
                         ),
-                        margin=dict(l=40, r=40, t=20, b=40)
+                        margin=dict(l=40, r=40, t=20, b=40), 
+                        font=dict(weight="bold", color="black")
                     )
                                     
                     st.plotly_chart(fig_trend, use_container_width=True)
@@ -413,7 +414,10 @@ if uploaded_file:
                 if not df_fail_overall.empty:
                     top5_fails = df_fail_overall.head(5).reset_index()
                     fig_fail_pie = px.bar(top5_fails, x="Count", y="Top 5 Fail Mode", orientation='h', text="Count", color="Count", color_continuous_scale=["#E17A7A", "#3A0D0D"])
-                    fig_fail_pie.update_layout(yaxis={'categoryorder':'total ascending'}, margin=dict(l=40, r=40, t=20, b=40))
+                    fig_fail_pie.update_traces(
+                        textfont=dict(weight="bold") # Warnanya mengikuti auto-kontras Plotly
+                    )
+                    fig_fail_pie.update_layout(yaxis={'categoryorder':'total ascending'}, margin=dict(l=40, r=40, t=20, b=40), font=dict(weight="bold", color="black"))
                     st.plotly_chart(fig_fail_pie, use_container_width=True)
                 else:
                     st.info("No defect data available.")
@@ -437,7 +441,7 @@ if uploaded_file:
             if not weekly_trend.empty:
               
                 fig_trend_w = px.line(weekly_trend, x="Week", y="Yield (%)", markers=True, text="Yield (%)", color_discrete_sequence=['#FF8C00'])
-                fig_trend_w.update_traces(textposition="top center", texttemplate='%{text}%')
+                fig_trend_w.update_traces(textposition="top center", texttemplate='%{text}%', textfont=dict(weight="bold", color="black")
                 
                 fig_trend_w.update_layout(
                     xaxis_title="Week",
@@ -445,7 +449,8 @@ if uploaded_file:
                         title="Yield (%)",
                         range=[50, 120]
                     ),
-                    margin=dict(l=50, r=50, t=20, b=40)
+                    margin=dict(l=50, r=50, t=20, b=40),
+                    font=dict(weight="bold", color="black")
                 )
                 
                 st.plotly_chart(fig_trend_w, use_container_width=True)
