@@ -353,7 +353,7 @@ if uploaded_file:
                 <div class="kpi-card kpi-blue">
                     <div class="kpi-icon">📦</div>
                     <div>
-                        <div class="kpi-title">Total Volume (QTY IN)</div>
+                        <div class="kpi-title">Total Input Quantity (QTY IN)</div>
                         <div class="kpi-value">{int(total_qty_in):,}</div>
                     </div>
                 </div>
