@@ -290,7 +290,7 @@ if uploaded_file:
         tab1, tab2, tab3 = st.tabs(["Data Overview", "Monthly", "Weekly"])
 
         with tab1:
-            year_text = f" - {extracted_year} if extracted_year else ""
+            year_text = f" - {extracted_year}" if extracted_year else ""
             st.header(f"Monthly Integrated Yield Data{year_text}")
             st.markdown("#### → Quantity and Yield per Month")
             st.dataframe(df_qty, use_container_width=True)
