@@ -302,7 +302,7 @@ if uploaded_file:
             top_fail_name = df_fail_overall.index[0] if not df_fail_overall.empty else "None"
             top_fail_count = df_fail_overall.iloc[0] if not df_fail_overall.empty else 0 
 
-            col 1, col2, col3 = st.columns(3)
+            col1, col2, col3 = st.columns(3)
             with col1:
                 st.metric(label="Total Volume (QTY IN)", value=f"{int(total_qty_in):,}")
             with col2:
