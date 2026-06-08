@@ -290,45 +290,112 @@ if uploaded_file:
         tab1, tab2, tab3, tab4 = st.tabs(["Performance Overview", "Monthly", "Weekly", "Integrated Raw Data"])
 
         with tab1:
-            year_text = f" - {extracted_year}" if extracted_year else ""
-            st.header(f"Performance Overview {year_text}")
-
+            st.header(f"Executive Summary {year_text}")
+            
+            # --- 1. HITUNG KPI ---
             total_qty_in = df_monthly["TOTAL QTY IN"].sum()
             total_qty_pass = df_monthly["TOTAL QTY PASS"].sum()
-            overall_yield = (total_qty_pass / total_qty_in * 100) if total_qty_in > 0 else 0 
-
+            overall_yield = (total_qty_pass / total_qty_in * 100) if total_qty_in > 0 else 0
+            
+            # Cari Top Fail Keseluruhan
             df_fail_overall = df_fail.groupby("Top 5 Fail Mode")["Count"].sum().sort_values(ascending=False)
             df_fail_overall = df_fail_overall[~df_fail_overall.index.isin(["No Fail Data", "Not Available"])]
             top_fail_name = df_fail_overall.index[0] if not df_fail_overall.empty else "None"
-            top_fail_count = df_fail_overall.iloc[0] if not df_fail_overall.empty else 0 
+            top_fail_count = df_fail_overall.iloc[0] if not df_fail_overall.empty else 0
 
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric(label="Total Volume (QTY IN)", value=f"{int(total_qty_in):,}")
-            with col2:
-                st.metric(label="Overall Yield", value=f"{overall_yield:.2f}%")
+            # --- 2. TAMPILKAN KPI CARDS DENGAN CSS KUSTOM ---
+            st.markdown("""
+            <style>
+            .kpi-container {
+                display: flex;
+                justify-content: space-between;
+                gap: 15px;
+                margin-bottom: 20px;
+            }
+            .kpi-card {
+                flex: 1;
+                border-radius: 10px;
+                padding: 20px;
+                color: white;
+                display: flex;
+                align-items: center;
+                box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+            }
+            .kpi-icon {
+                font-size: 45px;
+                margin-right: 15px;
+            }
+            .kpi-title {
+                font-size: 16px;
+                font-weight: 600;
+                margin-bottom: 5px;
+                opacity: 0.9;
+            }
+            .kpi-value {
+                font-size: 28px;
+                font-weight: bold;
+            }
+            .kpi-blue { background-color: #2196F3; }
+            .kpi-yellow { background-color: #FFC107; color: #333 !important; }
+            .kpi-maroon { background-color: #800000; }
+            .defect-count { 
+                color: #FF5555; /* Merah terang agar kontras di latar marun */
+                font-size: 18px; 
+                font-weight: bold;
+            }
+            </style>
+            """, unsafe_allow_html=True)
 
-            with col3:
-                st.metric(label="Top Defect Mode", value=str(top_fail_name), delta =f"{int(top_fail_count)} pcs", delta_color="inverse")
+            # Render Kotak KPI
+            st.markdown(f"""
+            <div class="kpi-container">
+                <div class="kpi-card kpi-blue">
+                    <div class="kpi-icon">📦</div>
+                    <div>
+                        <div class="kpi-title">Total Volume (QTY IN)</div>
+                        <div class="kpi-value">{int(total_qty_in):,}</div>
+                    </div>
+                </div>
+                <div class="kpi-card kpi-yellow">
+                    <div class="kpi-icon">📈</div>
+                    <div>
+                        <div class="kpi-title">Overall Yield</div>
+                        <div class="kpi-value">{overall_yield:.2f}%</div>
+                    </div>
+                </div>
+                <div class="kpi-card kpi-maroon">
+                    <div class="kpi-icon">⚠️</div>
+                    <div>
+                        <div class="kpi-title">Top Defect Mode ({top_fail_name})</div>
+                        <div class="kpi-value"><span class="defect-count">{int(top_fail_count)} pcs</span></div>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
             st.markdown("---")
 
+            # --- 3. GRAFIK INTERAKTIF PLOTLY ---
             col_chart1, col_chart2 = st.columns(2)
 
             with col_chart1:
                 st.subheader("Yield Trend per Month")
+                # Agregasi data bulanan
                 monthly_trend = df_monthly.groupby("Month", as_index=False)[["TOTAL QTY IN", "TOTAL QTY PASS"]].sum()
-                monthly_trend["Yield (%)"] = (monthly_trend["TOTAL QTY PASS"] / monthly_trend["TOTAL QTY IN"].replace(0, pd.NA)) * 100
-
+                # Modifikasi 1: Dibulatkan menjadi 2 angka di belakang koma
+                monthly_trend["Yield (%)"] = ((monthly_trend["TOTAL QTY PASS"] / monthly_trend["TOTAL QTY IN"].replace(0, pd.NA)) * 100).fillna(0).round(2)
+                
                 month_order = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
                 monthly_trend["Month"] = pd.Categorical(monthly_trend["Month"], categories=month_order, ordered=True)
                 monthly_trend = monthly_trend.sort_values("Month").dropna(subset=["Yield (%)"])
 
                 if not monthly_trend.empty:
-                    fig_trend = px.line(monthly_trend, x="Month", y="Yield (%)", markers=True, text="Yield (%)")
-                    fig_trend.update_traces(textposition="top center", texttemplate='%{text:2f}%')
-                    fig_trend.update_layout(yaxis_title="Yield (%)", xaxis_title="Month", yaxis_range=[0, 110])
-                    st.plotly_chart(fig_trend, use_container_width= True)
+                    # Modifikasi 2: Warna garis oranye
+                    fig_trend = px.line(monthly_trend, x="Month", y="Yield (%)", markers=True, text="Yield (%)", color_discrete_sequence=['#FF8C00'])
+                    fig_trend.update_traces(textposition="top center", texttemplate='%{text}%')
+                    # Modifikasi 3: Sumbu Y dibatasi 0 - 100
+                    fig_trend.update_layout(yaxis_title="Yield (%)", xaxis_title="Month", yaxis_range=[0, 100])
+                    st.plotly_chart(fig_trend, use_container_width=True)
                 else:
                     st.info("No trend data available.")
 
@@ -336,12 +403,36 @@ if uploaded_file:
                 st.subheader("Top 5 Defect Modes Overall")
                 if not df_fail_overall.empty:
                     top5_fails = df_fail_overall.head(5).reset_index()
-                    fig_fail_pie = px.bar(top5_fails, x="Count", y="Top 5 Fail Mode", orientation = 'h', text="Count", color="Count", color_continuous_scale="Reds") 
+                    # Modifikasi 4: Warna gradasi merah muda ke merah gelap agar tidak menyatu dengan background putih
+                    fig_fail_pie = px.bar(top5_fails, x="Count", y="Top 5 Fail Mode", orientation='h', text="Count", color="Count", color_continuous_scale=["#fca5a5", "#7f1d1d"])
                     fig_fail_pie.update_layout(yaxis={'categoryorder':'total ascending'})
                     st.plotly_chart(fig_fail_pie, use_container_width=True)
                 else:
                     st.info("No defect data available.")
+
+            st.markdown("---")
+
+            # --- 4. GRAFIK YIELD TREND PER WEEK ---
+            st.subheader("Yield Trend per Week")
             
+            # Agregasi data mingguan
+            weekly_trend = df_weekly_detail.groupby("Week", as_index=False)[["TOTAL QTY IN", "TOTAL QTY PASS"]].sum()
+            weekly_trend["Yield (%)"] = ((weekly_trend["TOTAL QTY PASS"] / weekly_trend["TOTAL QTY IN"].replace(0, pd.NA)) * 100).fillna(0).round(2)
+            
+            # Buat order WW01 - WW52
+            week_order = [f"WW{str(i).zfill(2)}" for i in range(1,53)]
+            weekly_trend["Week"] = pd.Categorical(weekly_trend["Week"], categories=week_order, ordered=True)
+            weekly_trend = weekly_trend.sort_values("Week").dropna(subset=["Yield (%)"])
+            
+            if not weekly_trend.empty:
+                # Warna garis oranye dan sumbu Y 0 - 100
+                fig_trend_w = px.line(weekly_trend, x="Week", y="Yield (%)", markers=True, text="Yield (%)", color_discrete_sequence=['#FF8C00'])
+                fig_trend_w.update_traces(textposition="top center", texttemplate='%{text}%')
+                fig_trend_w.update_layout(yaxis_title="Yield (%)", xaxis_title="Week", yaxis_range=[0, 100])
+                st.plotly_chart(fig_trend_w, use_container_width=True)
+            else:
+                st.info("No weekly trend data available.")
+
 
 ######################################################################################################################################################################
 
