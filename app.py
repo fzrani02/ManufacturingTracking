@@ -441,7 +441,7 @@ if uploaded_file:
             if not weekly_trend.empty:
               
                 fig_trend_w = px.line(weekly_trend, x="Week", y="Yield (%)", markers=True, text="Yield (%)", color_discrete_sequence=['#FF8C00'])
-                fig_trend_w.update_traces(textposition="top center", texttemplate='%{text}%', textfont=dict(weight="bold", color="black")
+                fig_trend_w.update_traces(textposition="top center", texttemplate='%{text}%', textfont=dict(weight="bold", color="black"))
                 
                 fig_trend_w.update_layout(
                     xaxis_title="Week",
