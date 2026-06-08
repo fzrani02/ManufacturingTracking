@@ -287,7 +287,7 @@ if uploaded_file:
 
         st.success("Processing Completed")
 
-        tab1, tab2, tab3, tab4 = st.tabs(["Performance Overview", "Monthly", "Weekly", "Integrated Raw Data"])
+        tab1, tab2, tab3, tab4 = st.tabs(["Performance Overview", "Monthly", "Weekly", "Integrated Data"])
 
         with tab1:
             year_text = f" - {extracted_year}" if extracted_year else ""
@@ -367,7 +367,7 @@ if uploaded_file:
                 <div class="kpi-card kpi-maroon">
                     <div class="kpi-icon">⚠️</div>
                     <div>
-                        <div class="kpi-title">Top Defect Mode ({top_fail_name})</div>
+                        <div class="kpi-title">Top Defect Mode : ({top_fail_name})</div>
                         <div class="kpi-value"><span class="defect-count">{int(top_fail_count)} pcs</span></div>
                     </div>
                 </div>
