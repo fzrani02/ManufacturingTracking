@@ -398,7 +398,7 @@ if uploaded_file:
                         xaxis_title="Month",
                         yaxis=dict(
                             title="Yield (%)",
-                            range=[0, 100]
+                            range=[50, 120]
                         ),
                         margin=dict(l=40, r=40, t=20, b=40)
                     )
@@ -435,7 +435,7 @@ if uploaded_file:
             weekly_trend = weekly_trend[weekly_trend["Yield (%)"] > 0]
             
             if not weekly_trend.empty:
-                # Warna garis oranye dan sumbu Y 0 - 100
+              
                 fig_trend_w = px.line(weekly_trend, x="Week", y="Yield (%)", markers=True, text="Yield (%)", color_discrete_sequence=['#FF8C00'])
                 fig_trend_w.update_traces(textposition="top center", texttemplate='%{text}%')
                 
@@ -443,7 +443,7 @@ if uploaded_file:
                     xaxis_title="Week",
                     yaxis=dict(
                         title="Yield (%)",
-                        range=[0, 100]
+                        range=[50, 120]
                     ),
                     margin=dict(l=50, r=50, t=20, b=40)
                 )
