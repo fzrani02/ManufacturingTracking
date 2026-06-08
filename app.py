@@ -325,7 +325,7 @@ if uploaded_file:
                 monthly_trend = monthly_trend.sort_values("Month").dropna(subset=["Yield (%)"])
 
                 if not monthly_trend.empty:
-                    fig_trend = px.line(month_trend, x="Month", y="Yield (%)", markers=True, text="Yield (%)")
+                    fig_trend = px.line(monthly_trend, x="Month", y="Yield (%)", markers=True, text="Yield (%)")
                     fig_trend.update_traces(textposition="top center", texttemplate='%{text:2f}%')
                     fig_trend.update_layout(yaxis_title="Yield (%)", xaxis_title="Month", yaxis_range=[0, 110])
                     st.plotly_chart(fig_trend, use_container_width= True)
