@@ -379,7 +379,7 @@ if uploaded_file:
             # =====================================================================
             # FILTER UNTUK GRAFIK TREND (MONTHLY & WEEKLY)
             # =====================================================================
-            st.markdown("<h3 style='text-align: center; margin-bottom: 10px;'>Trend Analysis</h3>", unsafe_allow_html=True)
+            #st.markdown("<h3 style='text-align: center; margin-bottom: 10px;'>Trend Analysis</h3>", unsafe_allow_html=True)
             
             col_filter1, col_filter2 = st.columns(2)
             
