@@ -291,7 +291,7 @@ if uploaded_file:
 
         with tab1:
             year_text = f" - {extracted_year}" if extracted_year else ""
-            st.header(f"Executive Summary {year_text}")
+            st.header(f"Performance Overview {year_text}")
             
             # --- 1. HITUNG KPI ---
             total_qty_in = df_monthly["TOTAL QTY IN"].sum()
