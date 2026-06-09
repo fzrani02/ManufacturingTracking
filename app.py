@@ -393,7 +393,7 @@ if uploaded_file:
                     station_options = ["All Stations"]
                 else:
                     station_list = df_monthly[df_monthly["Customer"] == selected_cust_trend]["Station"].dropna().unique()
-                    station_options = ["All Stations"] + sorted(station_options)
+                    station_options = ["All Stations"] + sorted(station_list)
                     
                 selected_stat_trend = st.selectbox("2. Select Station", station_options, key="trend_station")
 
