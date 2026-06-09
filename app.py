@@ -384,28 +384,43 @@ if uploaded_file:
             col_filter1, col_filter2 = st.columns(2)
             
             with col_filter1:
-                # Dropdown 1: Pilih Customer
-                customer_options = sorted(df_monthly["Customer"].dropna().unique())
+             
+                customer_options = ["All Customers"] + sorted(df_monthly["Customer"].dropna().unique())
                 selected_cust_trend = st.selectbox("1. Select Customer", customer_options, key="trend_customer")
                 
             with col_filter2:
-                # Dropdown 2: Pilih Station (Otomatis menyesuaikan Customer yang dipilih)
-                # Ambil daftar station unik milik customer tersebut
-                station_options = df_monthly[df_monthly["Customer"] == selected_cust_trend]["Station"].dropna().unique()
-                # Tambahkan opsi "All Stations" di posisi pertama (index 0)
-                station_options = ["All Stations"] + sorted(station_options)
+                if selected_cust_trend == "All Customers":
+                    station_options = ["All Stations"]
+                else:
+                    station_list = df_monthly[df_monthly["Customer"] == selected_cust_trend]["Station"].dropna().unique()
+                    station_options = ["All Stations"] + sorted(station_options)
+                    
                 selected_stat_trend = st.selectbox("2. Select Station", station_options, key="trend_station")
 
             # --- PREPARASI DATA BERDASARKAN FILTER ---
             # Filter Data Bulanan
-            df_trend_m = df_monthly[df_monthly["Customer"] == selected_cust_trend].copy()
+            df_trend_m = df_monthly.copy()
+            
+            if selected_cust_trend != "All Customers":
+                df_trend_m = df_trend_m[df_trend_m["Customer"] == selected_cust_trend]
             if selected_stat_trend != "All Stations":
                 df_trend_m = df_trend_m[df_trend_m["Station"] == selected_stat_trend]
                 
             # Filter Data Mingguan
-            df_trend_w = df_weekly_detail[df_weekly_detail["Customer"] == selected_cust_trend].copy()
+            df_trend_w = df_weekly_detail.copy()
+            
+            if selected_cust_trend != "All Customers":
+                df_trend_w = df_trend_w[df_trend_w["Customer"] == selected_cust_trend]
+                        
             if selected_stat_trend != "All Stations":
                 df_trend_w = df_trend_w[df_trend_w["Station"] == selected_stat_trend]
+
+            # Filter Defect 
+            df_fail_filtered = df_fail.copy()
+            if selected_cust_trend != "All Customers":
+                df_fail_filtered = df_fail_filtered[df_fail_filtered["Customer"] == selected_cust_trend]
+            if selected_cust_trend != "All Stations":
+                df_fail_filtered = df_fail_filtered[df_fail_filtered["Station"] == selected_stat_trend]
 
             # Label dinamis untuk judul chart
             filter_label = f"<span style='font-size: 14px; color: gray;'><br>({selected_cust_trend} - {selected_stat_trend})</span>"
@@ -456,7 +471,7 @@ if uploaded_file:
             with col_chart2:
                 st.markdown("<h3 style='text-align: center; margin-bottom: 15px;'>Top 5 Defect Modes Overall</h3>", unsafe_allow_html=True)
                 
-                if not df_fail_overall.empty:
+                if not df_fail_overall.empty and df_fail_overall.max() > 0:
                     top5_fails = df_fail_overall.head(5).reset_index()
                     fig_fail_pie = px.bar(top5_fails, x="Count", y="Top 5 Fail Mode", orientation='h', text="Count", color="Count", color_continuous_scale=["#fca5a5", "#7f1d1d"])
                     fig_fail_pie.update_traces(
