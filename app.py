@@ -392,13 +392,19 @@ if uploaded_file:
                 monthly_trend = monthly_trend[monthly_trend["Yield (%)"] > 0]
 
                 if not monthly_trend.empty:
+                    min_yield_m = monthly_trend["Yield (%)"].min()
+                    max_yield_m = monthly_trend["Yield (%)"].max()
+                    y_lower_m = min_yield_m - 20
+                    y_upper_m = max_yield_m + 20
+                    
                     fig_trend = px.line(monthly_trend, x="Month", y="Yield (%)", markers=True, text="Yield (%)", color_discrete_sequence=['#FF8C00'])
+                    
                     fig_trend.update_traces(textposition="top center", texttemplate='%{text}%', textfont=dict(weight="bold", color="black"))
                     fig_trend.update_layout(
                         xaxis_title="Month",
                         yaxis=dict(
                             title="Yield (%)",
-                            range=[50, 120]
+                            range=[y_lower_m, y_upper_m]
                         ),
                         margin=dict(l=40, r=40, t=20, b=40), 
                         font=dict(weight="bold", color="black")
@@ -439,15 +445,21 @@ if uploaded_file:
             weekly_trend = weekly_trend[weekly_trend["Yield (%)"] > 0]
             
             if not weekly_trend.empty:
+
+                min_yield_w = weekly_trend["Yield (%)"].min()
+                max_yield_w = weekly_trend["Yield (%)"].max()
+                y_lower_w = min_yield_w - 20 
+                y_upper_w = max_yield_w + 20
               
                 fig_trend_w = px.line(weekly_trend, x="Week", y="Yield (%)", markers=True, text="Yield (%)", color_discrete_sequence=['#FF8C00'])
+                
                 fig_trend_w.update_traces(textposition="top center", texttemplate='%{text}%', textfont=dict(weight="bold", color="black"))
                 
                 fig_trend_w.update_layout(
                     xaxis_title="Week",
                     yaxis=dict(
                         title="Yield (%)",
-                        range=[50, 120]
+                        range=[y_lower_w, y_upper_w]
                     ),
                     margin=dict(l=50, r=50, t=20, b=40),
                     font=dict(weight="bold", color="black")
