@@ -419,8 +419,12 @@ if uploaded_file:
             df_fail_filtered = df_fail.copy()
             if selected_cust_trend != "All Customers":
                 df_fail_filtered = df_fail_filtered[df_fail_filtered["Customer"] == selected_cust_trend]
-            if selected_cust_trend != "All Stations":
+            if selected_stat_trend != "All Stations":
                 df_fail_filtered = df_fail_filtered[df_fail_filtered["Station"] == selected_stat_trend]
+
+            # Agregasi ulang Top Fail berdasarkan filter yang baru
+            df_fail_overall = df_fail_filtered.groupby("Top 5 Fail Mode")["Count"].sum().sort_values(ascending=False)
+            df_fail_overall = df_fail_overall[~df_fail_overall.index.isin(["No Fail Data", "Not Available"])]
 
             # Label dinamis untuk judul chart
             filter_label = f"<span style='font-size: 14px; color: gray;'><br>({selected_cust_trend} - {selected_stat_trend})</span>"
