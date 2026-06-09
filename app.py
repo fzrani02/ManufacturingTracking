@@ -376,54 +376,97 @@ if uploaded_file:
 
             st.markdown("---")
 
+            # =====================================================================
+            # FILTER UNTUK GRAFIK TREND (MONTHLY & WEEKLY)
+            # =====================================================================
+            st.markdown("<h3 style='text-align: center; margin-bottom: 10px;'>Trend Analysis</h3>", unsafe_allow_html=True)
+            
+            col_filter1, col_filter2 = st.columns(2)
+            
+            with col_filter1:
+                # Dropdown 1: Pilih Customer
+                customer_options = sorted(df_monthly["Customer"].dropna().unique())
+                selected_cust_trend = st.selectbox("1. Select Customer", customer_options, key="trend_customer")
+                
+            with col_filter2:
+                # Dropdown 2: Pilih Station (Otomatis menyesuaikan Customer yang dipilih)
+                # Ambil daftar station unik milik customer tersebut
+                station_options = df_monthly[df_monthly["Customer"] == selected_cust_trend]["Station"].dropna().unique()
+                # Tambahkan opsi "All Stations" di posisi pertama (index 0)
+                station_options = ["All Stations"] + sorted(station_options)
+                selected_stat_trend = st.selectbox("2. Select Station", station_options, key="trend_station")
+
+            # --- PREPARASI DATA BERDASARKAN FILTER ---
+            # Filter Data Bulanan
+            df_trend_m = df_monthly[df_monthly["Customer"] == selected_cust_trend].copy()
+            if selected_stat_trend != "All Stations":
+                df_trend_m = df_trend_m[df_trend_m["Station"] == selected_stat_trend]
+                
+            # Filter Data Mingguan
+            df_trend_w = df_weekly_detail[df_weekly_detail["Customer"] == selected_cust_trend].copy()
+            if selected_stat_trend != "All Stations":
+                df_trend_w = df_trend_w[df_trend_w["Station"] == selected_stat_trend]
+
+            # Label dinamis untuk judul chart
+            filter_label = f"<span style='font-size: 14px; color: gray;'><br>({selected_cust_trend} - {selected_stat_trend})</span>"
+
+            st.markdown("<br>", unsafe_allow_html=True) # Spasi jarak
+
             # --- 3. GRAFIK INTERAKTIF PLOTLY ---
             col_chart1, col_chart2 = st.columns(2)
 
             with col_chart1:
-                st.markdown("<h3 style='text-align: center; margin-bottom: 15px;'>Yield Trend per Month</h3>", unsafe_allow_html=True)
-   
-                monthly_trend = df_monthly.groupby("Month", as_index=False)[["TOTAL QTY IN", "TOTAL QTY PASS"]].sum()
+                st.markdown(f"<h3 style='text-align: center; margin-bottom: 15px;'>Yield Trend per Month{filter_label}</h3>", unsafe_allow_html=True)
+                
+                # Agregasi data bulanan (dari data yang sudah difilter)
+                monthly_trend = df_trend_m.groupby("Month", as_index=False)[["TOTAL QTY IN", "TOTAL QTY PASS"]].sum()
                 monthly_trend["Yield (%)"] = ((monthly_trend["TOTAL QTY PASS"] / monthly_trend["TOTAL QTY IN"].replace(0, pd.NA)) * 100).fillna(0).round(2)
                 
                 month_order = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
                 monthly_trend["Month"] = pd.Categorical(monthly_trend["Month"], categories=month_order, ordered=True)
                 monthly_trend = monthly_trend.sort_values("Month").dropna(subset=["Yield (%)"])
 
+                # Filter untuk membuang Yield <= 0 agar grafik tidak jeblok
                 monthly_trend = monthly_trend[monthly_trend["Yield (%)"] > 0]
 
                 if not monthly_trend.empty:
-                    min_yield_m = monthly_trend["Yield (%)"].min()
-                    max_yield_m = monthly_trend["Yield (%)"].max()
-                    y_lower_m = min_yield_m - 20
-                    y_upper_m = max_yield_m + 20
+                    # Menghitung Batas Y Dinamis (+20 / -20)
+                    min_y_m = monthly_trend["Yield (%)"].min()
+                    max_y_m = monthly_trend["Yield (%)"].max()
                     
                     fig_trend = px.line(monthly_trend, x="Month", y="Yield (%)", markers=True, text="Yield (%)", color_discrete_sequence=['#FF8C00'])
-                    
-                    fig_trend.update_traces(textposition="top center", texttemplate='%{text}%', textfont=dict(weight="bold", color="black"))
+                    fig_trend.update_traces(
+                        textposition="top center", 
+                        texttemplate='%{text}%',
+                        textfont=dict(weight="bold", color="black")
+                    )
                     fig_trend.update_layout(
                         xaxis_title="Month",
                         yaxis=dict(
                             title="Yield (%)",
-                            range=[y_lower_m, y_upper_m]
+                            range=[min_y_m - 20, max_y_m + 20]
                         ),
-                        margin=dict(l=40, r=40, t=20, b=40), 
+                        margin=dict(l=40, r=40, t=20, b=40),
                         font=dict(weight="bold", color="black")
                     )
-                                    
                     st.plotly_chart(fig_trend, use_container_width=True)
                 else:
-                    st.info("No trend data available.")
+                    st.warning("No data available for the selected Customer/Station.")
 
             with col_chart2:
-                st.markdown("<h3 style='text-align: center; margin-bottom: 15px;'>Top 5 Failed Modes Overall</h3>", unsafe_allow_html=True)
+                st.markdown("<h3 style='text-align: center; margin-bottom: 15px;'>Top 5 Defect Modes Overall</h3>", unsafe_allow_html=True)
                 
                 if not df_fail_overall.empty:
                     top5_fails = df_fail_overall.head(5).reset_index()
-                    fig_fail_pie = px.bar(top5_fails, x="Count", y="Top 5 Fail Mode", orientation='h', text="Count", color="Count", color_continuous_scale=["#E17A7A", "#3A0D0D"])
+                    fig_fail_pie = px.bar(top5_fails, x="Count", y="Top 5 Fail Mode", orientation='h', text="Count", color="Count", color_continuous_scale=["#fca5a5", "#7f1d1d"])
                     fig_fail_pie.update_traces(
-                        textfont=dict(weight="bold") # Warnanya mengikuti auto-kontras Plotly
+                        textfont=dict(weight="bold") 
                     )
-                    fig_fail_pie.update_layout(yaxis={'categoryorder':'total ascending'}, margin=dict(l=40, r=40, t=20, b=40), font=dict(weight="bold", color="black"))
+                    fig_fail_pie.update_layout(
+                        yaxis={'categoryorder':'total ascending'},
+                        margin=dict(l=40, r=40, t=20, b=40),
+                        font=dict(weight="bold", color="black")
+                    )
                     st.plotly_chart(fig_fail_pie, use_container_width=True)
                 else:
                     st.info("No defect data available.")
@@ -431,44 +474,42 @@ if uploaded_file:
             st.markdown("---")
 
             # --- 4. GRAFIK YIELD TREND PER WEEK ---
-            st.markdown("<h3 style='text-align: center; margin-bottom: 15px;'>Yield Trend per Week</h3>", unsafe_allow_html=True)
+            st.markdown(f"<h3 style='text-align: center; margin-bottom: 15px;'>Yield Trend per Week{filter_label}</h3>", unsafe_allow_html=True)
             
-            # Agregasi data mingguan
-            weekly_trend = df_weekly_detail.groupby("Week", as_index=False)[["TOTAL QTY IN", "TOTAL QTY PASS"]].sum()
+            # Agregasi data mingguan (dari data yang sudah difilter)
+            weekly_trend = df_trend_w.groupby("Week", as_index=False)[["TOTAL QTY IN", "TOTAL QTY PASS"]].sum()
             weekly_trend["Yield (%)"] = ((weekly_trend["TOTAL QTY PASS"] / weekly_trend["TOTAL QTY IN"].replace(0, pd.NA)) * 100).fillna(0).round(2)
             
-            # Buat order WW01 - WW52
             week_order = [f"WW{str(i).zfill(2)}" for i in range(1,53)]
             weekly_trend["Week"] = pd.Categorical(weekly_trend["Week"], categories=week_order, ordered=True)
             weekly_trend = weekly_trend.sort_values("Week").dropna(subset=["Yield (%)"])
-
+            
+            # Filter untuk membuang Yield <= 0 agar grafik tidak jeblok
             weekly_trend = weekly_trend[weekly_trend["Yield (%)"] > 0]
             
             if not weekly_trend.empty:
+                # Menghitung Batas Y Dinamis (+20 / -20)
+                min_y_w = weekly_trend["Yield (%)"].min()
+                max_y_w = weekly_trend["Yield (%)"].max()
 
-                min_yield_w = weekly_trend["Yield (%)"].min()
-                max_yield_w = weekly_trend["Yield (%)"].max()
-                y_lower_w = min_yield_w - 20 
-                y_upper_w = max_yield_w + 20
-              
                 fig_trend_w = px.line(weekly_trend, x="Week", y="Yield (%)", markers=True, text="Yield (%)", color_discrete_sequence=['#FF8C00'])
-                
-                fig_trend_w.update_traces(textposition="top center", texttemplate='%{text}%', textfont=dict(weight="bold", color="black"))
-                
+                fig_trend_w.update_traces(
+                    textposition="top center", 
+                    texttemplate='%{text}%',
+                    textfont=dict(weight="bold", color="black")
+                )
                 fig_trend_w.update_layout(
                     xaxis_title="Week",
                     yaxis=dict(
                         title="Yield (%)",
-                        range=[y_lower_w, y_upper_w]
+                        range=[min_y_w - 20, max_y_w + 20]
                     ),
                     margin=dict(l=50, r=50, t=20, b=40),
                     font=dict(weight="bold", color="black")
                 )
-                
                 st.plotly_chart(fig_trend_w, use_container_width=True)
             else:
-                st.info("No weekly trend data available.")
-
+                st.warning("No weekly trend data available for the selected Customer/Station.")
 
 ######################################################################################################################################################################
 
