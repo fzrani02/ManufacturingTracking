@@ -473,7 +473,7 @@ if uploaded_file:
                     st.warning("No data available for the selected Customer/Station.")
 
             with col_chart2:
-                st.markdown("<h3 style='text-align: center; margin-bottom: 15px;'>Top 5 Defect Modes{filter_label}</h3>", unsafe_allow_html=True)
+                st.markdown(f"<h3 style='text-align: center; margin-bottom: 15px;'>Top 5 Defect Modes{filter_label}</h3>", unsafe_allow_html=True)
                 
                 if not df_fail_overall.empty and df_fail_overall.max() > 0:
                     top5_fails = df_fail_overall.head(5).reset_index()
