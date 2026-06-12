@@ -360,7 +360,7 @@ if uploaded_file:
                 <div class="kpi-card kpi-yellow">
                     <div class="kpi-icon">📈</div>
                     <div>
-                        <div class="kpi-title">Overall Yield</div>
+                        <div class="kpi-title">Overall Yield (YTD)</div>
                         <div class="kpi-value">{overall_yield:.2f}%</div>
                     </div>
                 </div>
