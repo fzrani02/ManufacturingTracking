@@ -509,7 +509,7 @@ if uploaded_file:
                         xaxis_title="", 
                         yaxis=dict(
                             title="Yield (%)", 
-                            range=[0, 110-
+                            range=[0, 110]
                         ),
                         margin=dict(l=40, r=40, t=20, b=40), 
                         font=dict(weight="bold", color="black")
