@@ -493,7 +493,7 @@ if uploaded_file:
                 if ytd_yield > 0:
                     fig_ytd = px.bar(
                         df_ytd, 
-                        x="category",
+                        x="Category",
                         y="Yield (%)", 
                         text="Yield (%)", 
                         color_discrete_sequence=['#FF8C00']
