@@ -496,7 +496,7 @@ if uploaded_file:
                         x="Category",
                         y="Yield (%)", 
                         text="Yield (%)", 
-                        color_discrete_sequence=['#FF8C00']
+                        color_discrete_sequence=['#2563EB']
                     )
 
                     fig_ytd.update_traces(
