@@ -478,7 +478,7 @@ if uploaded_file:
 
                 # Visualization of YTD. Title = "Yield to Date". Y axis = Yield(%), X axis = single label: "YTD". colour = orange. There's number label on top of bar. 
                 total_qty_in_overall = df_monthly["TOTAL QTY IN"].sum()
-                total_qty_in_overall = df_monthly["TOTAL QTY PASS"].sum()
+                total_qty_pass_overall = df_monthly["TOTAL QTY PASS"].sum()
 
                 if total_qty_in_overall > 0:
                     ytd_yield = round((total_qty_pass_overall / total_qty_in_overall) * 100, 2)
