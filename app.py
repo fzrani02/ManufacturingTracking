@@ -432,7 +432,7 @@ if uploaded_file:
             st.markdown("<br>", unsafe_allow_html=True) # Spasi jarak
 
             # --- 3. GRAFIK INTERAKTIF PLOTLY ---
-            col_chart1, col_chart2, col_chart3 = st.columns(3)
+            col_chart1, col_chart2 = st.columns([2,1])
 
             with col_chart1:
                 st.markdown(f"<h3 style='text-align: center; margin-bottom: 15px;'>Yield Trend per Month{filter_label}</h3>", unsafe_allow_html=True)
@@ -473,52 +473,6 @@ if uploaded_file:
                     st.warning("No data available for the selected Customer/Station.")
 
             with col_chart2:
-                ## NEW YTD Single Barchart 
-                st.markdown("<h3 style='text-align: center; margin-bottom: 15px;'>Yield to Date<br><span style='font-size: 14px; color: gray;'>(Overall)</span></h3>", unsafe_allow_html=True)
-
-                # Visualization of YTD. Title = "Yield to Date". Y axis = Yield(%), X axis = single label: "YTD". colour = orange. There's number label on top of bar. 
-                total_qty_in_overall = df_monthly["TOTAL QTY IN"].sum()
-                total_qty_pass_overall = df_monthly["TOTAL QTY PASS"].sum()
-
-                if total_qty_in_overall > 0:
-                    ytd_yield = round((total_qty_pass_overall / total_qty_in_overall) * 100, 2)
-                else:
-                    ytd_yield = 0.0
-
-                df_ytd = pd.DataFrame({
-                    "Category": ["YTD"], 
-                    "Yield (%)": [ytd_yield]
-                })
-
-                if ytd_yield > 0:
-                    fig_ytd = px.bar(
-                        df_ytd, 
-                        x="Category",
-                        y="Yield (%)", 
-                        text="Yield (%)", 
-                        color_discrete_sequence=['#2563EB']
-                    )
-
-                    fig_ytd.update_traces(
-                        textposition="outside",
-                        texttemplate='%{text}%', 
-                        textfont=dict(weight="bold", color="black", size=14)
-                    )
-
-                    fig_ytd.update_layout(
-                        xaxis_title="", 
-                        yaxis=dict(
-                            title="Yield (%)", 
-                            range=[0, 110]
-                        ),
-                        margin=dict(l=40, r=40, t=20, b=40), 
-                        font=dict(weight="bold", color="black")
-                    )
-                    st.plotly_chart(fig_ytd, use_container_width=True)
-                else:
-                    st.warning("No YTD data available.")
-
-            with col_chart3:
                 st.markdown(f"<h3 style='text-align: center; margin-bottom: 15px;'>Top 5 Defect Modes{filter_label}</h3>", unsafe_allow_html=True)
                 
                 if not df_fail_overall.empty and df_fail_overall.max() > 0:
