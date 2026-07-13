@@ -1,6 +1,45 @@
 import streamlit as st
 import pandas as pd
-import io # Pastikan ini di-import untuk membuat file excel di memori
+import io 
+
+# =====================================================================
+# FUNGSI PEMBANTU UNTUK KUSTOMISASI WARNA/STYLE DI STREAMLIT (WEB)
+# =====================================================================
+def style_dataframe(df):
+    def style_cells(x):
+        df_style = pd.DataFrame('', index=x.index, columns=x.columns)
+        for i in range(len(x)):
+            is_yield = x['Metric'].iloc[i] == 'Yield'
+            for j, col in enumerate(x.columns):
+                styles = []
+                
+                # 1. Fill Biru Muda untuk kolom Q1, Q2, Q3, Q4
+                if col in ['Q1', 'Q2', 'Q3', 'Q4']:
+                    styles.append('background-color: #CFE2F3') 
+                
+                # 2. Warna font Nama WWXX = Biru Tua
+                if col.startswith('WW'):
+                    styles.append('color: #00008B') 
+                else:
+                    # Warna font selain WWXX (seperti nama Bulan) = Hitam
+                    styles.append('color: #000000')
+
+                # 3. Garis pembatas/bottom border di baris 'Yield'
+                if is_yield:
+                    styles.append('border-bottom: 2px solid #000000')
+                    
+                df_style.iloc[i, j] = '; '.join(styles)
+        return df_style
+
+    # Terapkan styling ke sel data
+    styler = df.style.apply(style_cells, axis=None)
+    
+    # 4. Kustomisasi Header: Fill Biru Muda & Bold
+    styler.set_table_styles([
+        {'selector': 'th', 'props': [('background-color', '#CFE2F3'), ('font-weight', 'bold'), ('color', 'black'), ('border', '1px solid white')]}
+    ])
+    
+    return styler
 
 # =====================================================================
 # FUNGSI PEMBANTU UNTUK MEMBANGUN STRUKTUR TABEL
@@ -67,8 +106,8 @@ def build_yield_dataframe(target_customers, df_m_agg, df_w_agg, yy, year_str):
                 else:
                     t = tested.get(key, 0)
                     p = passed.get(key, 0)
-                    # Handle jika tidak ada data agar tidak error
-                    return f"{(p/t)*100:.2f}%" if t > 0 else "#DIV/0!"
+                    # FIX: Mengubah logika #DIV/0! menjadi "0%" saja agar rapi
+                    return f"{(p/t)*100:.2f}%" if t > 0 else "0%"
             
             # --- SUSUNAN KOLOM ---
             row[f"JAN'{yy}"] = get_val("Jan")
@@ -119,13 +158,12 @@ def build_yield_dataframe(target_customers, df_m_agg, df_w_agg, yy, year_str):
 # FUNGSI UTAMA RENDER TAB REPORT
 # =====================================================================
 def render_tab_report(df_qty, df_fail, df_monthly, df_qty_weekly, df_fail_weekly, df_weekly_detail, extracted_year):
-    st.header("Report for ICT Customer")
+    st.header("Report Tab")
     
     year_str = str(extracted_year) if extracted_year else "2026"
     yy = year_str[-2:]
     
     # --- PREPROCESSING GLOBAL ---
-    # Agar aman dari huruf besar/kecil & spasi ekstra
     df_m = df_monthly.copy()
     df_m["Customer"] = df_m["Customer"].astype(str).str.upper().str.strip()
     df_m_agg = df_m.groupby(["Customer", "Month"], as_index=False)[["TOTAL QTY IN", "TOTAL QTY PASS", "TOTAL QTY FAIL"]].sum()
@@ -144,7 +182,8 @@ def render_tab_report(df_qty, df_fail, df_monthly, df_qty_weekly, df_fail_weekly
         "EROAD", "BRANE AUDIO", "CAT", "GDI", "PRO1"
     ]
     df_ict_report = build_yield_dataframe(target_ict, df_m_agg, df_w_agg, yy, year_str)
-    st.dataframe(df_ict_report, use_container_width=True, hide_index=True)
+    # Terapkan styling visual di streamlit
+    st.dataframe(style_dataframe(df_ict_report), use_container_width=True, hide_index=True)
 
 
     # ==================================
@@ -160,7 +199,7 @@ def render_tab_report(df_qty, df_fail, df_monthly, df_qty_weekly, df_fail_weekly
         "LMI", "PRO1"
     ]
     df_bt_report = build_yield_dataframe(target_bt, df_m_agg, df_w_agg, yy, year_str)
-    st.dataframe(df_bt_report, use_container_width=True, hide_index=True)
+    st.dataframe(style_dataframe(df_bt_report), use_container_width=True, hide_index=True)
     
     
     # ==================================
@@ -177,24 +216,79 @@ def render_tab_report(df_qty, df_fail, df_monthly, df_qty_weekly, df_fail_weekly
         "LMI", "PRO1"
     ]
     df_fct_report = build_yield_dataframe(target_fct, df_m_agg, df_w_agg, yy, year_str)
-    st.dataframe(df_fct_report, use_container_width=True, hide_index=True)
+    st.dataframe(style_dataframe(df_fct_report), use_container_width=True, hide_index=True)
 
 
     # ==================================
-    # EXPORT KE EXCEL
+    # EXPORT KE EXCEL (DENGAN KUSTOMISASI FORMAT)
     # ==================================
     st.markdown("---")
     
-    # Membuat buffer memori untuk file Excel
     excel_buffer = io.BytesIO()
     
-    # Menulis ke-3 DataFrame ke dalam satu file Excel dengan sheet yang berbeda
     with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
-        df_ict_report.to_excel(writer, sheet_name=f'ICT Yield ALL FY{yy}', index=False)
-        df_bt_report.to_excel(writer, sheet_name=f'BT Yield ALL FY{yy}', index=False)
-        df_fct_report.to_excel(writer, sheet_name=f'FCT Yield ALL FY{yy}', index=False)
+        workbook = writer.book
+        
+        # --- DEFINISI CUSTOM FORMAT EXCEL ---
+        # Format Header
+        fmt_header_month = workbook.add_format({'bg_color': '#CFE2F3', 'bold': True, 'font_color': '#000000', 'border': 1, 'align': 'center'})
+        fmt_header_ww = workbook.add_format({'bg_color': '#CFE2F3', 'bold': True, 'font_color': '#00008B', 'border': 1, 'align': 'center'})
+        
+        # Format Kolom Biasa (Bulan) & WWXX
+        fmt_base = workbook.add_format({})
+        fmt_ww = workbook.add_format({'font_color': '#00008B'})
+        
+        # Format Kolom Q1-Q4 (Fill Biru Muda)
+        fmt_q = workbook.add_format({'bg_color': '#CFE2F3'})
+        
+        # Format Baris Yield (Garis bawah)
+        fmt_yield = workbook.add_format({'bottom': 1})
+        fmt_yield_ww = workbook.add_format({'bottom': 1, 'font_color': '#00008B'})
+        fmt_yield_q = workbook.add_format({'bottom': 1, 'bg_color': '#CFE2F3'})
+        
+        reports_dict = {
+            f'ICT Yield ALL FY{yy}': df_ict_report,
+            f'BT Yield ALL FY{yy}': df_bt_report,
+            f'FCT Yield ALL FY{yy}': df_fct_report
+        }
+        
+        for sheet_name, df_report in reports_dict.items():
+            df_report.to_excel(writer, sheet_name=sheet_name, index=False)
+            worksheet = writer.sheets[sheet_name]
+            
+            # 1. Kustomisasi Header Excel
+            for col_num, col_name in enumerate(df_report.columns):
+                if col_name.startswith('WW'):
+                    worksheet.write(0, col_num, col_name, fmt_header_ww)
+                else:
+                    worksheet.write(0, col_num, col_name, fmt_header_month)
+                    
+            # 2. Set Lebar Kolom dan Format Dasar Kolom
+            for col_num, col_name in enumerate(df_report.columns):
+                if col_name in ['Metric', 'CUSTOMER']:
+                    worksheet.set_column(col_num, col_num, 16)
+                elif col_name in ['Q1', 'Q2', 'Q3', 'Q4']:
+                    worksheet.set_column(col_num, col_num, 10, fmt_q)
+                elif col_name.startswith('WW'):
+                    worksheet.set_column(col_num, col_num, 9, fmt_ww)
+                else:
+                    worksheet.set_column(col_num, col_num, 10)
+                    
+            # 3. Kustomisasi Baris Khusus 'Yield' (Garis Bawah)
+            # row_num di-loop dari Dataframe, karena header Excel = row 0, data Excel = row_num + 1
+            for row_num in range(len(df_report)):
+                if df_report.iloc[row_num]['Metric'] == 'Yield':
+                    for col_num, col_name in enumerate(df_report.columns):
+                        val = df_report.iloc[row_num, col_num]
+                        
+                        # Gabungkan format font color/background dengan format border Yield
+                        if col_name in ['Q1', 'Q2', 'Q3', 'Q4']:
+                            worksheet.write(row_num + 1, col_num, val, fmt_yield_q)
+                        elif col_name.startswith('WW'):
+                            worksheet.write(row_num + 1, col_num, val, fmt_yield_ww)
+                        else:
+                            worksheet.write(row_num + 1, col_num, val, fmt_yield)
     
-    # Tombol Download Streamlit
     st.download_button(
         label="📥 Export to Excel (RTY-ICT-BT-FCT -Overall)",
         data=excel_buffer.getvalue(),
