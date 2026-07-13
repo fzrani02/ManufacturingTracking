@@ -1246,7 +1246,7 @@ if uploaded_file:
             )
             
         with tab5:
-            render_tab_report(df_qty, df_fail, df_monthly, df_qty_weekly, df_fail_weekly, df_weekly_detail)
+            render_tab_report(df_qty, df_fail, df_monthly, df_qty_weekly, df_fail_weekly, df_weekly_detail, extracted_year)
 
             
 
