@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 def render_tab_report(df_qty, df_fail, df_monthly, df_qty_weekly, df_fail_weekly, df_weekly_detail, extracted_year):
-    st.header("1. Report for ICT Customer")
+    st.header("Report for ICT Customer")
     
     # -------------------------------------------------------------
     # 1. PERSIAPAN VARIABEL TAHUN & CUSTOMER
@@ -11,7 +11,7 @@ def render_tab_report(df_qty, df_fail, df_monthly, df_qty_weekly, df_fail_weekly
     year_str = str(extracted_year) if extracted_year else "2026"
     yy = year_str[-2:] # Ambil 2 digit terakhir, misal '26'
     
-    st.subheader(f"ICT Yield ALL FY{yy}")
+    st.subheader(f"1. ICT Yield ALL FY{yy}")
     
     # Daftar customer spesifik untuk tabel ICT
     target_customers = [
