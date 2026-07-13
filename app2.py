@@ -197,5 +197,5 @@ def render_tab_report(df_qty, df_fail, df_monthly, df_qty_weekly, df_fail_weekly
     st.dataframe(df_ict_report, use_container_width=True, hide_index=True)
     
     # Info: Export button ke excel disiapkan untuk next step
-    st.info("💡 Tombol Ekspor ke Excel (dengan sheet ICT, B, FCT) akan dibangun di tahap selanjutnya.")
+    
   
