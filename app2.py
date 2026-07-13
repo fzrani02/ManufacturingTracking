@@ -23,8 +23,13 @@ def render_tab_report(df_qty, df_fail, df_monthly, df_qty_weekly, df_fail_weekly
     # -------------------------------------------------------------
     # 2. FILTER & AGREGASI DATA BULANAN
     # -------------------------------------------------------------
-    # Filter data bulanan sesuai target customer
-    df_m = df_monthly[df_monthly["Customer"].isin(target_customers)].copy()
+    df_m = df_monthly.copy()
+    
+    # AMAN DARI HURUF BESAR/KECIL: Ubah semua nama customer di data menjadi UPPERCASE & hapus spasi tak terlihat
+    df_m["Customer"] = df_m["Customer"].astype(str).str.upper().str.strip()
+    
+    # Baru kita filter sesuai target
+    df_m = df_m[df_m["Customer"].isin(target_customers)]
     
     # Agregasi (Sum) berdasarkan Customer dan Bulan (Abaikan Station/Project)
     df_m_agg = df_m.groupby(["Customer", "Month"], as_index=False)[
