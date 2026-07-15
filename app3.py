@@ -37,7 +37,7 @@ def style_model_dataframe(df):
 # =====================================================================
 # FUNGSI PEMBANTU UNTUK MEMBANGUN TABEL PER STATION & MODEL
 # =====================================================================
-def build_model_yield_dataframe(target_station, df_qty_raw, df_w_raw, yy, year_str):
+def build_model_yield_dataframe(target_station, df_qty_raw, df_weekly_detail_raw, yy, year_str):
     final_rows = []
     
     q1_months = ["Jan", "Feb", "Mar"]
@@ -49,20 +49,20 @@ def build_model_yield_dataframe(target_station, df_qty_raw, df_w_raw, yy, year_s
     
     # Filter data hanya untuk Station yang diminta
     df_m = df_qty_raw[df_qty_raw["Station"] == target_station].copy()
-    df_w = df_w_raw[df_w_raw["Station"] == target_station].copy()
+    df_w = df_weekly_detail_raw[df_weekly_detail_raw["Station"] == target_station].copy()
     
     if df_m.empty:
         return pd.DataFrame()
         
-    # Bersihkan nama Project agar menjadi nama Model yang rapi
+    # Bersihkan nama Project
     df_m["Project"] = df_m["Project"].astype(str).str.replace(".xlsx", "", regex=False)
     df_w["Project"] = df_w["Project"].astype(str).str.replace(".xlsx", "", regex=False)
     
-    # Dapatkan kombinasi unik Customer dan Model
+    # Dapatkan kombinasi unik Customer dan Model dari data bulanan
     unique_combos = df_m[["Customer", "Project"]].drop_duplicates().sort_values(by=["Customer", "Project"])
     
-    # Fungsi kecil untuk menarik angka dengan aman dari format df_qty yang menyamping
-    def get_qty_val(df_source, time_col, qty_keyword):
+    # Helper untuk mengambil data bulanan yang formatnya menyamping (dari df_qty)
+    def get_monthly_qty(df_source, time_col, qty_keyword):
         if time_col not in df_source.columns:
             return 0
         rows = df_source[df_source["QTY"].astype(str).str.contains(qty_keyword, case=False, na=False)]
@@ -77,17 +77,18 @@ def build_model_yield_dataframe(target_station, df_qty_raw, df_w_raw, yy, year_s
         
         tested, passed, rejected = {}, {}, {}
         
-        # Ekstrak data bulanan menyamping
+        # 1. Ekstrak data BULANAN (menyamping dari df_qty)
         for m in all_months:
-            tested[m] = get_qty_val(m_data, m, "IN")
-            passed[m] = get_qty_val(m_data, m, "PASS")
-            rejected[m] = get_qty_val(m_data, m, "FAIL")
+            tested[m] = get_monthly_qty(m_data, m, "IN")
+            passed[m] = get_monthly_qty(m_data, m, "PASS")
+            rejected[m] = get_monthly_qty(m_data, m, "FAIL")
             
-        # Ekstrak data mingguan menyamping
+        # 2. Ekstrak data MINGGUAN (menjumlahkan baris dari df_weekly_detail)
         for w in all_weeks:
-            tested[w] = get_qty_val(w_data, w, "IN")
-            passed[w] = get_qty_val(w_data, w, "PASS")
-            rejected[w] = get_qty_val(w_data, w, "FAIL")
+            row_w = w_data[w_data["Week"] == w]
+            tested[w] = row_w["TOTAL QTY IN"].sum() if not row_w.empty else 0
+            passed[w] = row_w["TOTAL QTY PASS"].sum() if not row_w.empty else 0
+            rejected[w] = row_w["TOTAL QTY FAIL"].sum() if not row_w.empty else 0
             
         # Kalkulasi Kuartal
         for q, q_months in zip(["Q1", "Q2", "Q3", "Q4"], [q1_months, q2_months, q3_months, q4_months]):
@@ -163,47 +164,47 @@ def build_model_yield_dataframe(target_station, df_qty_raw, df_w_raw, yy, year_s
 # =====================================================================
 # FUNGSI UTAMA RENDER TAB MODEL REPORT
 # =====================================================================
-def render_tab_model_report(df_qty_raw, df_qty_weekly_raw, extracted_year):
-    st.header("🗃️ Report by Model for ICT, BT, and FCT Customer")
+def render_tab_model_report(df_qty_raw, df_weekly_detail_raw, extracted_year):
+    st.header("Yield by Model (Project) Tab")
     
     year_str = str(extracted_year) if extracted_year else "2026"
     yy = year_str[-2:]
     
     # --- PREPROCESSING GLOBAL ---
     df_qty = df_qty_raw.copy()
-    df_qty_weekly = df_qty_weekly_raw.copy()
+    df_weekly_detail = df_weekly_detail_raw.copy()
     
     df_qty["Customer"] = df_qty["Customer"].astype(str).str.upper().str.strip()
     df_qty["Station"] = df_qty["Station"].astype(str).str.upper().str.strip()
     
-    df_qty_weekly["Customer"] = df_qty_weekly["Customer"].astype(str).str.upper().str.strip()
-    df_qty_weekly["Station"] = df_qty_weekly["Station"].astype(str).str.upper().str.strip()
+    df_weekly_detail["Customer"] = df_weekly_detail["Customer"].astype(str).str.upper().str.strip()
+    df_weekly_detail["Station"] = df_weekly_detail["Station"].astype(str).str.upper().str.strip()
 
     # 1. FCT YIELD PER MODEL
-    st.subheader(f"1. FCT Yield ALL FY{yy} per Model")
-    df_fct_model = build_model_yield_dataframe("FCT", df_qty, df_qty_weekly, yy, year_str)
+    st.subheader(f"FCT Yield ALL FY{yy} per Model")
+    df_fct_model = build_model_yield_dataframe("FCT", df_qty, df_weekly_detail, yy, year_str)
     if not df_fct_model.empty:
         st.dataframe(style_model_dataframe(df_fct_model), use_container_width=True, hide_index=True)
     else:
-        st.info("Not available.")
+        st.info("Tidak ada data untuk station FCT.")
 
     # 2. ICT YIELD PER MODEL
     st.markdown("---")
-    st.subheader(f"2. ICT Yield ALL FY{yy} per Model")
-    df_ict_model = build_model_yield_dataframe("ICT", df_qty, df_qty_weekly, yy, year_str)
+    st.subheader(f"ICT Yield ALL FY{yy} per Model")
+    df_ict_model = build_model_yield_dataframe("ICT", df_qty, df_weekly_detail, yy, year_str)
     if not df_ict_model.empty:
         st.dataframe(style_model_dataframe(df_ict_model), use_container_width=True, hide_index=True)
     else:
-        st.info("Not available.")
+        st.info("Tidak ada data untuk station ICT.")
 
     # 3. BLT YIELD PER MODEL
     st.markdown("---")
-    st.subheader(f"3. BLT Yield ALL FY{yy} per Model")
-    df_blt_model = build_model_yield_dataframe("BLT", df_qty, df_qty_weekly, yy, year_str)
+    st.subheader(f"BLT Yield ALL FY{yy} per Model")
+    df_blt_model = build_model_yield_dataframe("BLT", df_qty, df_weekly_detail, yy, year_str)
     if not df_blt_model.empty:
         st.dataframe(style_model_dataframe(df_blt_model), use_container_width=True, hide_index=True)
     else:
-        st.info("Not available.")
+        st.info("Tidak ada data untuk station BLT.")
 
     # ==================================
     # EXPORT KE EXCEL
