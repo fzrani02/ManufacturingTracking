@@ -12,18 +12,14 @@ def style_model_dataframe(df):
             is_yield = x['Metric'].iloc[i] == 'Yield'
             for j, col in enumerate(x.columns):
                 styles = []
-                
                 if col in ['Q1', 'Q2', 'Q3', 'Q4']:
                     styles.append('background-color: #CFE2F3') 
-                
                 if col.startswith('WW'):
                     styles.append('color: #00008B') 
                 else:
                     styles.append('color: #000000')
-
                 if is_yield:
                     styles.append('border-bottom: 2px solid #000000')
-                    
                 df_style.iloc[i, j] = '; '.join(styles)
         return df_style
 
@@ -31,15 +27,12 @@ def style_model_dataframe(df):
     styler.set_table_styles([
         {'selector': 'th', 'props': [('background-color', '#CFE2F3'), ('font-weight', 'bold'), ('color', 'black'), ('border', '1px solid white')]}
     ])
-    
     return styler
 
 # =====================================================================
 # FUNGSI PEMBANTU UNTUK MEMBANGUN TABEL PER STATION & MODEL
 # =====================================================================
-def build_model_yield_dataframe(target_station, df_qty_raw, df_weekly_detail_raw, yy, year_str):
-    final_rows = []
-    
+def build_model_yield_dataframe(target_station, df_m_raw, df_w_raw, yy, year_str):
     q1_months = ["Jan", "Feb", "Mar"]
     q2_months = ["Apr", "May", "Jun"]
     q3_months = ["Jul", "Aug", "Sep"]
@@ -47,9 +40,15 @@ def build_model_yield_dataframe(target_station, df_qty_raw, df_weekly_detail_raw
     all_months = q1_months + q2_months + q3_months + q4_months
     all_weeks = [f"WW{str(i).zfill(2)}" for i in range(1, 54)]
     
+    # Cek keamanan kolom wajib
+    required_cols = ["Station", "Customer", "Project"]
+    for col in required_cols:
+        if col not in df_m_raw.columns or col not in df_w_raw.columns:
+            return pd.DataFrame() 
+            
     # Filter data hanya untuk Station yang diminta
-    df_m = df_qty_raw[df_qty_raw["Station"] == target_station].copy()
-    df_w = df_weekly_detail_raw[df_weekly_detail_raw["Station"] == target_station].copy()
+    df_m = df_m_raw[df_m_raw["Station"].astype(str).str.upper() == target_station].copy()
+    df_w = df_w_raw[df_w_raw["Station"].astype(str).str.upper() == target_station].copy()
     
     if df_m.empty:
         return pd.DataFrame()
@@ -58,15 +57,36 @@ def build_model_yield_dataframe(target_station, df_qty_raw, df_weekly_detail_raw
     df_m["Project"] = df_m["Project"].astype(str).str.replace(".xlsx", "", regex=False)
     df_w["Project"] = df_w["Project"].astype(str).str.replace(".xlsx", "", regex=False)
     
-    # Dapatkan kombinasi unik Customer dan Model dari data bulanan
     unique_combos = df_m[["Customer", "Project"]].drop_duplicates().sort_values(by=["Customer", "Project"])
     
-    # Helper untuk mengambil data bulanan yang formatnya menyamping (dari df_qty)
-    def get_monthly_qty(df_source, time_col, qty_keyword):
+    # === FUNGSI PENCARI KOLOM METRIK DINAMIS (KEBAL ERROR) ===
+    def get_qty_val(df_source, time_col, qty_keyword):
         if time_col not in df_source.columns:
             return 0
-        rows = df_source[df_source["QTY"].astype(str).str.contains(qty_keyword, case=False, na=False)]
+        
+        metric_col = None
+        # 1. Coba tebak kolom metrik dari nilainya yang mengandung IN / PASS / FAIL
+        for col in df_source.columns:
+            if df_source[col].dtype == object or df_source[col].dtype.name == 'category':
+                if df_source[col].astype(str).str.contains(qty_keyword, case=False, na=False).any():
+                    metric_col = col
+                    break
+        
+        # 2. Fallback ke nama header yang umum jika belum ketemu
+        if not metric_col:
+            for col in ["QTY", "Qty", "qty", "Metric", "METRIC", "Parameter"]:
+                if col in df_source.columns:
+                    metric_col = col
+                    break
+                    
+        if not metric_col:
+            return 0 # Bypass jika benar-benar tidak ada data
+            
+        # Ekstrak data berdasarkan kolom yang ditemukan
+        rows = df_source[df_source[metric_col].astype(str).str.contains(qty_keyword, case=False, na=False)]
         return pd.to_numeric(rows[time_col], errors='coerce').fillna(0).sum()
+
+    final_rows = []
     
     for _, combo in unique_combos.iterrows():
         cust = combo["Customer"]
@@ -77,18 +97,16 @@ def build_model_yield_dataframe(target_station, df_qty_raw, df_weekly_detail_raw
         
         tested, passed, rejected = {}, {}, {}
         
-        # 1. Ekstrak data BULANAN (menyamping dari df_qty)
+        # Kalkulasi Bulanan & Mingguan
         for m in all_months:
-            tested[m] = get_monthly_qty(m_data, m, "IN")
-            passed[m] = get_monthly_qty(m_data, m, "PASS")
-            rejected[m] = get_monthly_qty(m_data, m, "FAIL")
+            tested[m] = get_qty_val(m_data, m, "IN")
+            passed[m] = get_qty_val(m_data, m, "PASS")
+            rejected[m] = get_qty_val(m_data, m, "FAIL")
             
-        # 2. Ekstrak data MINGGUAN (menjumlahkan baris dari df_weekly_detail)
         for w in all_weeks:
-            row_w = w_data[w_data["Week"] == w]
-            tested[w] = row_w["TOTAL QTY IN"].sum() if not row_w.empty else 0
-            passed[w] = row_w["TOTAL QTY PASS"].sum() if not row_w.empty else 0
-            rejected[w] = row_w["TOTAL QTY FAIL"].sum() if not row_w.empty else 0
+            tested[w] = get_qty_val(w_data, w, "IN")
+            passed[w] = get_qty_val(w_data, w, "PASS")
+            rejected[w] = get_qty_val(w_data, w, "FAIL")
             
         # Kalkulasi Kuartal
         for q, q_months in zip(["Q1", "Q2", "Q3", "Q4"], [q1_months, q2_months, q3_months, q4_months]):
@@ -102,7 +120,6 @@ def build_model_yield_dataframe(target_station, df_qty_raw, df_weekly_detail_raw
         rejected["YTD"] = sum(rejected[m] for m in all_months)
         
         def create_metric_row(metric_name, data_dict, is_yield=False):
-            # Tampilkan nama Customer & Model HANYA di baris 'Total qty tested'
             row = {
                 "Metric": metric_name, 
                 "CUSTOMER": cust if metric_name == "Total qty tested" else "",
@@ -164,7 +181,7 @@ def build_model_yield_dataframe(target_station, df_qty_raw, df_weekly_detail_raw
 # =====================================================================
 # FUNGSI UTAMA RENDER TAB MODEL REPORT
 # =====================================================================
-def render_tab_model_report(df_qty_raw, df_weekly_detail_raw, extracted_year):
+def render_tab_model_report(df_qty_raw, df_qty_weekly_raw, extracted_year):
     st.header("Yield by Model (Project) Tab")
     
     year_str = str(extracted_year) if extracted_year else "2026"
@@ -172,17 +189,18 @@ def render_tab_model_report(df_qty_raw, df_weekly_detail_raw, extracted_year):
     
     # --- PREPROCESSING GLOBAL ---
     df_qty = df_qty_raw.copy()
-    df_weekly_detail = df_weekly_detail_raw.copy()
+    df_qty_weekly = df_qty_weekly_raw.copy()
     
-    df_qty["Customer"] = df_qty["Customer"].astype(str).str.upper().str.strip()
-    df_qty["Station"] = df_qty["Station"].astype(str).str.upper().str.strip()
+    # Keamanan Case-Insensitive (Hanya jika kolom benar-benar ada)
+    if "Customer" in df_qty.columns: df_qty["Customer"] = df_qty["Customer"].astype(str).str.upper().str.strip()
+    if "Station" in df_qty.columns: df_qty["Station"] = df_qty["Station"].astype(str).str.upper().str.strip()
     
-    df_weekly_detail["Customer"] = df_weekly_detail["Customer"].astype(str).str.upper().str.strip()
-    df_weekly_detail["Station"] = df_weekly_detail["Station"].astype(str).str.upper().str.strip()
+    if "Customer" in df_qty_weekly.columns: df_qty_weekly["Customer"] = df_qty_weekly["Customer"].astype(str).str.upper().str.strip()
+    if "Station" in df_qty_weekly.columns: df_qty_weekly["Station"] = df_qty_weekly["Station"].astype(str).str.upper().str.strip()
 
     # 1. FCT YIELD PER MODEL
-    st.subheader(f"FCT Yield ALL FY{yy} per Model")
-    df_fct_model = build_model_yield_dataframe("FCT", df_qty, df_weekly_detail, yy, year_str)
+    st.subheader(f"1. FCT Yield ALL FY{yy} per Model")
+    df_fct_model = build_model_yield_dataframe("FCT", df_qty, df_qty_weekly, yy, year_str)
     if not df_fct_model.empty:
         st.dataframe(style_model_dataframe(df_fct_model), use_container_width=True, hide_index=True)
     else:
@@ -190,8 +208,8 @@ def render_tab_model_report(df_qty_raw, df_weekly_detail_raw, extracted_year):
 
     # 2. ICT YIELD PER MODEL
     st.markdown("---")
-    st.subheader(f"ICT Yield ALL FY{yy} per Model")
-    df_ict_model = build_model_yield_dataframe("ICT", df_qty, df_weekly_detail, yy, year_str)
+    st.subheader(f"2. ICT Yield ALL FY{yy} per Model")
+    df_ict_model = build_model_yield_dataframe("ICT", df_qty, df_qty_weekly, yy, year_str)
     if not df_ict_model.empty:
         st.dataframe(style_model_dataframe(df_ict_model), use_container_width=True, hide_index=True)
     else:
@@ -199,8 +217,8 @@ def render_tab_model_report(df_qty_raw, df_weekly_detail_raw, extracted_year):
 
     # 3. BLT YIELD PER MODEL
     st.markdown("---")
-    st.subheader(f"BLT Yield ALL FY{yy} per Model")
-    df_blt_model = build_model_yield_dataframe("BLT", df_qty, df_weekly_detail, yy, year_str)
+    st.subheader(f"3. BLT Yield ALL FY{yy} per Model")
+    df_blt_model = build_model_yield_dataframe("BLT", df_qty, df_qty_weekly, yy, year_str)
     if not df_blt_model.empty:
         st.dataframe(style_model_dataframe(df_blt_model), use_container_width=True, hide_index=True)
     else:
@@ -209,6 +227,10 @@ def render_tab_model_report(df_qty_raw, df_weekly_detail_raw, extracted_year):
     # ==================================
     # EXPORT KE EXCEL
     # ==================================
+    if df_fct_model.empty and df_ict_model.empty and df_blt_model.empty:
+        st.warning("Tidak ada data model yang bisa di-download.")
+        return
+
     st.markdown("---")
     excel_buffer = io.BytesIO()
     
@@ -270,3 +292,4 @@ def render_tab_model_report(df_qty_raw, df_weekly_detail_raw, extracted_year):
         file_name="Life Fitness Overall Yield Summary.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+    
