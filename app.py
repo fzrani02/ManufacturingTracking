@@ -12,6 +12,7 @@ import xlsxwriter
 from PIL import Image
 
 from app2 import render_tab_report
+from app3 import render_tab_model_report
 
 @st.cache_data(show_spinner=False)
 def run_processing(uploaded_file):
@@ -289,7 +290,7 @@ if uploaded_file:
 
         st.success("Processing Completed")
 
-        tab1, tab2, tab3, tab4, tab5 = st.tabs(["Performance Overview", "Monthly", "Weekly", "Integrated Data", "Report"])
+        tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["Performance Overview", "Monthly", "Weekly", "Integrated Data", "Report", "Model Report"])
 
         with tab1:
             year_text = f" - {extracted_year}" if extracted_year else ""
@@ -1247,6 +1248,9 @@ if uploaded_file:
             
         with tab5:
             render_tab_report(df_qty, df_fail, df_monthly, df_qty_weekly, df_fail_weekly, df_weekly_detail, extracted_year)
+
+        with tab6:
+            render_tab_model_report(df_monthly, df_weekly_detail, extracted_year)
 
             
 
