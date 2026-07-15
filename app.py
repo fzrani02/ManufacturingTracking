@@ -1250,7 +1250,7 @@ if uploaded_file:
             render_tab_report(df_qty, df_fail, df_monthly, df_qty_weekly, df_fail_weekly, df_weekly_detail, extracted_year)
 
         with tab6:
-            render_tab_model_report(df_qty, df_weekly_detail, extracted_year)
+            render_tab_model_report(df_qty, df_qty_weekly, extracted_year)
 
             
 
