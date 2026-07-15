@@ -3,7 +3,7 @@ import pandas as pd
 import io
 
 # =====================================================================
-# FUNGSI PEMBANTU UNTUK KUSTOMISASI WARNA/STYLE DI STREAMLIT (WEB)
+# FUNGSI PEMBANTU UNTUK KUSTOMISASI WARNA/STYLE DI STREAMLIT
 # =====================================================================
 def style_model_dataframe(df):
     def style_cells(x):
@@ -13,17 +13,14 @@ def style_model_dataframe(df):
             for j, col in enumerate(x.columns):
                 styles = []
                 
-                # 1. Fill Biru Muda untuk kolom Q1, Q2, Q3, Q4
                 if col in ['Q1', 'Q2', 'Q3', 'Q4']:
                     styles.append('background-color: #CFE2F3') 
                 
-                # 2. Warna font Nama WWXX = Biru Tua
                 if col.startswith('WW'):
                     styles.append('color: #00008B') 
                 else:
                     styles.append('color: #000000')
 
-                # 3. Garis pembatas/bottom border di baris 'Yield'
                 if is_yield:
                     styles.append('border-bottom: 2px solid #000000')
                     
@@ -31,7 +28,6 @@ def style_model_dataframe(df):
         return df_style
 
     styler = df.style.apply(style_cells, axis=None)
-    
     styler.set_table_styles([
         {'selector': 'th', 'props': [('background-color', '#CFE2F3'), ('font-weight', 'bold'), ('color', 'black'), ('border', '1px solid white')]}
     ])
@@ -41,7 +37,7 @@ def style_model_dataframe(df):
 # =====================================================================
 # FUNGSI PEMBANTU UNTUK MEMBANGUN TABEL PER STATION & MODEL
 # =====================================================================
-def build_model_yield_dataframe(target_station, df_m_raw, df_w_raw, yy, year_str):
+def build_model_yield_dataframe(target_station, df_qty_raw, df_w_raw, yy, year_str):
     final_rows = []
     
     q1_months = ["Jan", "Feb", "Mar"]
@@ -51,51 +47,53 @@ def build_model_yield_dataframe(target_station, df_m_raw, df_w_raw, yy, year_str
     all_months = q1_months + q2_months + q3_months + q4_months
     all_weeks = [f"WW{str(i).zfill(2)}" for i in range(1, 54)]
     
-    # Filter data hanya untuk Station yang diminta (FCT / ICT / BLT)
-    df_m = df_m_raw[df_m_raw["Station"] == target_station].copy()
+    # Filter data hanya untuk Station yang diminta
+    df_m = df_qty_raw[df_qty_raw["Station"] == target_station].copy()
     df_w = df_w_raw[df_w_raw["Station"] == target_station].copy()
     
-    # Bersihkan nama Project (hapus .xlsx jika ada) untuk dijadikan nama Model
+    if df_m.empty:
+        return pd.DataFrame()
+        
+    # Bersihkan nama Project
     df_m["Project"] = df_m["Project"].astype(str).str.replace(".xlsx", "", regex=False)
     df_w["Project"] = df_w["Project"].astype(str).str.replace(".xlsx", "", regex=False)
     
-    # Agregasi data per Customer, Project (Model), dan Waktu
-    df_m_agg = df_m.groupby(["Customer", "Project", "Month"], as_index=False)[["TOTAL QTY IN", "TOTAL QTY PASS", "TOTAL QTY FAIL"]].sum()
-    df_w_agg = df_w.groupby(["Customer", "Project", "Week"], as_index=False)[["TOTAL QTY IN", "TOTAL QTY PASS", "TOTAL QTY FAIL"]].sum()
+    # Dapatkan kombinasi unik Customer dan Model
+    unique_combos = df_m[["Customer", "Project"]].drop_duplicates().sort_values(by=["Customer", "Project"])
     
-    # Dapatkan kombinasi unik Customer dan Model (Project) yang ada di Station ini
-    unique_combos = df_m_agg[["Customer", "Project"]].drop_duplicates().sort_values(by=["Customer", "Project"])
+    # Helper untuk mengambil angka dari kolom QTY (IN/PASS/FAIL)
+    def get_qty_val(df_source, time_col, qty_keyword):
+        if time_col not in df_source.columns:
+            return 0
+        rows = df_source[df_source["QTY"].astype(str).str.contains(qty_keyword, case=False, na=False)]
+        return pd.to_numeric(rows[time_col], errors='coerce').fillna(0).sum()
     
     for _, combo in unique_combos.iterrows():
         cust = combo["Customer"]
         proj = combo["Project"]
         
-        m_data = df_m_agg[(df_m_agg["Customer"] == cust) & (df_m_agg["Project"] == proj)]
-        w_data = df_w_agg[(df_w_agg["Customer"] == cust) & (df_w_agg["Project"] == proj)]
+        m_data = df_m[(df_m["Customer"] == cust) & (df_m["Project"] == proj)]
+        w_data = df_w[(df_w["Customer"] == cust) & (df_w["Project"] == proj)]
         
         tested, passed, rejected = {}, {}, {}
         
-        # Isi data bulanan
+        # Isi data bulanan & mingguan
         for m in all_months:
-            row_m = m_data[m_data["Month"] == m]
-            tested[m] = row_m["TOTAL QTY IN"].sum() if not row_m.empty else 0
-            passed[m] = row_m["TOTAL QTY PASS"].sum() if not row_m.empty else 0
-            rejected[m] = row_m["TOTAL QTY FAIL"].sum() if not row_m.empty else 0
+            tested[m] = get_qty_val(m_data, m, "IN")
+            passed[m] = get_qty_val(m_data, m, "PASS")
+            rejected[m] = get_qty_val(m_data, m, "FAIL")
             
-        # Isi data mingguan
         for w in all_weeks:
-            row_w = w_data[w_data["Week"] == w]
-            tested[w] = row_w["TOTAL QTY IN"].sum() if not row_w.empty else 0
-            passed[w] = row_w["TOTAL QTY PASS"].sum() if not row_w.empty else 0
-            rejected[w] = row_w["TOTAL QTY FAIL"].sum() if not row_w.empty else 0
+            tested[w] = get_qty_val(w_data, w, "IN")
+            passed[w] = get_qty_val(w_data, w, "PASS")
+            rejected[w] = get_qty_val(w_data, w, "FAIL")
             
-        # Kalkulasi Kuartal
+        # Kalkulasi Kuartal & YTD
         for q, q_months in zip(["Q1", "Q2", "Q3", "Q4"], [q1_months, q2_months, q3_months, q4_months]):
             tested[q] = sum(tested[m] for m in q_months)
             passed[q] = sum(passed[m] for m in q_months)
             rejected[q] = sum(rejected[m] for m in q_months)
             
-        # Kalkulasi YTD
         tested["YTD"] = sum(tested[m] for m in all_months)
         passed["YTD"] = sum(passed[m] for m in all_months)
         rejected["YTD"] = sum(rejected[m] for m in all_months)
@@ -163,24 +161,27 @@ def build_model_yield_dataframe(target_station, df_m_raw, df_w_raw, yy, year_str
 # =====================================================================
 # FUNGSI UTAMA RENDER TAB MODEL REPORT
 # =====================================================================
-def render_tab_model_report(df_monthly, df_weekly_detail, extracted_year):
+def render_tab_model_report(df_qty_raw, df_qty_weekly_raw, extracted_year):
     st.header("Yield by Model (Project) Tab")
     
     year_str = str(extracted_year) if extracted_year else "2026"
     yy = year_str[-2:]
     
     # --- PREPROCESSING GLOBAL ---
-    df_m = df_monthly.copy()
-    df_m["Customer"] = df_m["Customer"].astype(str).str.upper().str.strip()
-    df_m["Station"] = df_m["Station"].astype(str).str.upper().str.strip()
+    # Gunakan salinan dari data mentah
+    df_qty = df_qty_raw.copy()
+    df_qty_weekly = df_qty_weekly_raw.copy()
     
-    df_w = df_weekly_detail.copy()
-    df_w["Customer"] = df_w["Customer"].astype(str).str.upper().str.strip()
-    df_w["Station"] = df_w["Station"].astype(str).str.upper().str.strip()
+    # Aman dari huruf besar/kecil
+    df_qty["Customer"] = df_qty["Customer"].astype(str).str.upper().str.strip()
+    df_qty["Station"] = df_qty["Station"].astype(str).str.upper().str.strip()
+    
+    df_qty_weekly["Customer"] = df_qty_weekly["Customer"].astype(str).str.upper().str.strip()
+    df_qty_weekly["Station"] = df_qty_weekly["Station"].astype(str).str.upper().str.strip()
 
     # 1. FCT YIELD PER MODEL
     st.subheader(f"FCT Yield ALL FY{yy} per Model")
-    df_fct_model = build_model_yield_dataframe("FCT", df_m, df_w, yy, year_str)
+    df_fct_model = build_model_yield_dataframe("FCT", df_qty, df_qty_weekly, yy, year_str)
     if not df_fct_model.empty:
         st.dataframe(style_model_dataframe(df_fct_model), use_container_width=True, hide_index=True)
     else:
@@ -189,7 +190,7 @@ def render_tab_model_report(df_monthly, df_weekly_detail, extracted_year):
     # 2. ICT YIELD PER MODEL
     st.markdown("---")
     st.subheader(f"ICT Yield ALL FY{yy} per Model")
-    df_ict_model = build_model_yield_dataframe("ICT", df_m, df_w, yy, year_str)
+    df_ict_model = build_model_yield_dataframe("ICT", df_qty, df_qty_weekly, yy, year_str)
     if not df_ict_model.empty:
         st.dataframe(style_model_dataframe(df_ict_model), use_container_width=True, hide_index=True)
     else:
@@ -198,7 +199,7 @@ def render_tab_model_report(df_monthly, df_weekly_detail, extracted_year):
     # 3. BLT YIELD PER MODEL
     st.markdown("---")
     st.subheader(f"BLT Yield ALL FY{yy} per Model")
-    df_blt_model = build_model_yield_dataframe("BLT", df_m, df_w, yy, year_str)
+    df_blt_model = build_model_yield_dataframe("BLT", df_qty, df_qty_weekly, yy, year_str)
     if not df_blt_model.empty:
         st.dataframe(style_model_dataframe(df_blt_model), use_container_width=True, hide_index=True)
     else:
@@ -208,7 +209,6 @@ def render_tab_model_report(df_monthly, df_weekly_detail, extracted_year):
     # EXPORT KE EXCEL
     # ==================================
     st.markdown("---")
-    
     excel_buffer = io.BytesIO()
     
     with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
@@ -216,7 +216,6 @@ def render_tab_model_report(df_monthly, df_weekly_detail, extracted_year):
         
         fmt_header_month = workbook.add_format({'bg_color': '#CFE2F3', 'bold': True, 'font_color': '#000000', 'border': 1, 'align': 'center'})
         fmt_header_ww = workbook.add_format({'bg_color': '#CFE2F3', 'bold': True, 'font_color': '#00008B', 'border': 1, 'align': 'center'})
-        
         fmt_q = workbook.add_format({'bg_color': '#CFE2F3'})
         fmt_ww = workbook.add_format({'font_color': '#00008B'})
         
@@ -224,7 +223,6 @@ def render_tab_model_report(df_monthly, df_weekly_detail, extracted_year):
         fmt_yield_ww = workbook.add_format({'bottom': 1, 'font_color': '#00008B'})
         fmt_yield_q = workbook.add_format({'bottom': 1, 'bg_color': '#CFE2F3'})
         
-        # Sesuai aturan: Sheet 1 FCT, Sheet 2 ICT, Sheet 3 BLT
         reports_dict = {
             'FCT': df_fct_model,
             'ICT': df_ict_model,
@@ -245,7 +243,6 @@ def render_tab_model_report(df_monthly, df_weekly_detail, extracted_year):
                     worksheet.write(0, col_num, col_name, fmt_header_month)
                     
             for col_num, col_name in enumerate(df_report.columns):
-                # Lebarkan sedikit untuk kolom Metric, Customer, dan Model
                 if col_name in ['Metric', 'CUSTOMER', 'MODEL']:
                     worksheet.set_column(col_num, col_num, 16)
                 elif col_name in ['Q1', 'Q2', 'Q3', 'Q4']:
@@ -266,7 +263,6 @@ def render_tab_model_report(df_monthly, df_weekly_detail, extracted_year):
                         else:
                             worksheet.write(row_num + 1, col_num, val, fmt_yield)
     
-    # Tombol Download dengan nama file yang kamu minta
     st.download_button(
         label=f"📥 Download Yield ALL FY{yy} per Model",
         data=excel_buffer.getvalue(),
