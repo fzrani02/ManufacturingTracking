@@ -54,14 +54,14 @@ def build_model_yield_dataframe(target_station, df_qty_raw, df_w_raw, yy, year_s
     if df_m.empty:
         return pd.DataFrame()
         
-    # Bersihkan nama Project
+    # Bersihkan nama Project agar menjadi nama Model yang rapi
     df_m["Project"] = df_m["Project"].astype(str).str.replace(".xlsx", "", regex=False)
     df_w["Project"] = df_w["Project"].astype(str).str.replace(".xlsx", "", regex=False)
     
     # Dapatkan kombinasi unik Customer dan Model
     unique_combos = df_m[["Customer", "Project"]].drop_duplicates().sort_values(by=["Customer", "Project"])
     
-    # Helper untuk mengambil angka dari kolom QTY (IN/PASS/FAIL)
+    # Fungsi kecil untuk menarik angka dengan aman dari format df_qty yang menyamping
     def get_qty_val(df_source, time_col, qty_keyword):
         if time_col not in df_source.columns:
             return 0
@@ -77,23 +77,25 @@ def build_model_yield_dataframe(target_station, df_qty_raw, df_w_raw, yy, year_s
         
         tested, passed, rejected = {}, {}, {}
         
-        # Isi data bulanan & mingguan
+        # Ekstrak data bulanan menyamping
         for m in all_months:
             tested[m] = get_qty_val(m_data, m, "IN")
             passed[m] = get_qty_val(m_data, m, "PASS")
             rejected[m] = get_qty_val(m_data, m, "FAIL")
             
+        # Ekstrak data mingguan menyamping
         for w in all_weeks:
             tested[w] = get_qty_val(w_data, w, "IN")
             passed[w] = get_qty_val(w_data, w, "PASS")
             rejected[w] = get_qty_val(w_data, w, "FAIL")
             
-        # Kalkulasi Kuartal & YTD
+        # Kalkulasi Kuartal
         for q, q_months in zip(["Q1", "Q2", "Q3", "Q4"], [q1_months, q2_months, q3_months, q4_months]):
             tested[q] = sum(tested[m] for m in q_months)
             passed[q] = sum(passed[m] for m in q_months)
             rejected[q] = sum(rejected[m] for m in q_months)
             
+        # Kalkulasi YTD
         tested["YTD"] = sum(tested[m] for m in all_months)
         passed["YTD"] = sum(passed[m] for m in all_months)
         rejected["YTD"] = sum(rejected[m] for m in all_months)
@@ -168,11 +170,9 @@ def render_tab_model_report(df_qty_raw, df_qty_weekly_raw, extracted_year):
     yy = year_str[-2:]
     
     # --- PREPROCESSING GLOBAL ---
-    # Gunakan salinan dari data mentah
     df_qty = df_qty_raw.copy()
     df_qty_weekly = df_qty_weekly_raw.copy()
     
-    # Aman dari huruf besar/kecil
     df_qty["Customer"] = df_qty["Customer"].astype(str).str.upper().str.strip()
     df_qty["Station"] = df_qty["Station"].astype(str).str.upper().str.strip()
     
