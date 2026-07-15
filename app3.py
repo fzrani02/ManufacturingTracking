@@ -182,7 +182,7 @@ def build_model_yield_dataframe(target_station, df_m_raw, df_w_raw, yy, year_str
 # FUNGSI UTAMA RENDER TAB MODEL REPORT
 # =====================================================================
 def render_tab_model_report(df_qty_raw, df_qty_weekly_raw, extracted_year):
-    st.header("Yield by Model (Project) Tab")
+    st.header("🗃️ Report per Model for Station FCT, ICT, and BLT")
     
     year_str = str(extracted_year) if extracted_year else "2026"
     yy = year_str[-2:]
