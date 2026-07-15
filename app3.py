@@ -180,7 +180,7 @@ def render_tab_model_report(df_qty_raw, df_qty_weekly_raw, extracted_year):
     df_qty_weekly["Station"] = df_qty_weekly["Station"].astype(str).str.upper().str.strip()
 
     # 1. FCT YIELD PER MODEL
-    st.subheader(f"FCT Yield ALL FY{yy} per Model")
+    st.subheader(f"1. FCT Yield ALL FY{yy} per Model")
     df_fct_model = build_model_yield_dataframe("FCT", df_qty, df_qty_weekly, yy, year_str)
     if not df_fct_model.empty:
         st.dataframe(style_model_dataframe(df_fct_model), use_container_width=True, hide_index=True)
@@ -189,7 +189,7 @@ def render_tab_model_report(df_qty_raw, df_qty_weekly_raw, extracted_year):
 
     # 2. ICT YIELD PER MODEL
     st.markdown("---")
-    st.subheader(f"ICT Yield ALL FY{yy} per Model")
+    st.subheader(f"2. ICT Yield ALL FY{yy} per Model")
     df_ict_model = build_model_yield_dataframe("ICT", df_qty, df_qty_weekly, yy, year_str)
     if not df_ict_model.empty:
         st.dataframe(style_model_dataframe(df_ict_model), use_container_width=True, hide_index=True)
@@ -198,7 +198,7 @@ def render_tab_model_report(df_qty_raw, df_qty_weekly_raw, extracted_year):
 
     # 3. BLT YIELD PER MODEL
     st.markdown("---")
-    st.subheader(f"BLT Yield ALL FY{yy} per Model")
+    st.subheader(f"3. BLT Yield ALL FY{yy} per Model")
     df_blt_model = build_model_yield_dataframe("BLT", df_qty, df_qty_weekly, yy, year_str)
     if not df_blt_model.empty:
         st.dataframe(style_model_dataframe(df_blt_model), use_container_width=True, hide_index=True)
