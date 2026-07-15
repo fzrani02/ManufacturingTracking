@@ -164,7 +164,7 @@ def build_model_yield_dataframe(target_station, df_qty_raw, df_w_raw, yy, year_s
 # FUNGSI UTAMA RENDER TAB MODEL REPORT
 # =====================================================================
 def render_tab_model_report(df_qty_raw, df_qty_weekly_raw, extracted_year):
-    st.header("Yield by Model (Project) Tab")
+    st.header("🗃️ Report by Model for ICT, BT, and FCT Customer")
     
     year_str = str(extracted_year) if extracted_year else "2026"
     yy = year_str[-2:]
@@ -185,7 +185,7 @@ def render_tab_model_report(df_qty_raw, df_qty_weekly_raw, extracted_year):
     if not df_fct_model.empty:
         st.dataframe(style_model_dataframe(df_fct_model), use_container_width=True, hide_index=True)
     else:
-        st.info("Tidak ada data untuk station FCT.")
+        st.info("Not available.")
 
     # 2. ICT YIELD PER MODEL
     st.markdown("---")
@@ -194,7 +194,7 @@ def render_tab_model_report(df_qty_raw, df_qty_weekly_raw, extracted_year):
     if not df_ict_model.empty:
         st.dataframe(style_model_dataframe(df_ict_model), use_container_width=True, hide_index=True)
     else:
-        st.info("Tidak ada data untuk station ICT.")
+        st.info("Not available.")
 
     # 3. BLT YIELD PER MODEL
     st.markdown("---")
@@ -203,7 +203,7 @@ def render_tab_model_report(df_qty_raw, df_qty_weekly_raw, extracted_year):
     if not df_blt_model.empty:
         st.dataframe(style_model_dataframe(df_blt_model), use_container_width=True, hide_index=True)
     else:
-        st.info("Tidak ada data untuk station BLT.")
+        st.info("Not available.")
 
     # ==================================
     # EXPORT KE EXCEL
